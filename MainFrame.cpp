@@ -7,10 +7,10 @@ MainFrame::MainFrame(const wxString& title) : wxFrame(nullptr, wxID_ANY, title) 
 	panel->SetBackgroundColour(wxColor(0, 0, 200));
 
 	wxBoxSizer* sizer = new wxBoxSizer(wxVERTICAL);
+	int x = 100;
+	int y = 100;
 
 	for (int i = 0; i < 15; i++) {
-		int x = 100;
-		int y = 100;
 		sizer->Add(new wxButton(panel, wxID_ANY, "", wxPoint(x, y), wxSize(50, 50)),
 			1,
 			wxEXPAND | wxALL, 
@@ -26,8 +26,8 @@ MainFrame::MainFrame(const wxString& title) : wxFrame(nullptr, wxID_ANY, title) 
 	/*
 	for (auto it = panel->GetChildren().begin(); it != panel->GetChildren().end(); ++it) {
 		it -> SetBackgroundColour(wxColor(0, 0, 0));
-	*/
 	}
+	*/
 
 
 	/*
