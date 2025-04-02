@@ -3,7 +3,8 @@
 #include <wx/wx.h>
 
 
-wxBoxSizer* sizer = new wxBoxSizer(wxVERTICAL);
+//wxBoxSizer* sizer = new wxBoxSizer(wxVERTICAL); //why sizer works as global, unsure (potential ERROR LATER)
+bool panelFlag = true;
 
 MainFrame::MainFrame(const wxString& title) : wxFrame(nullptr, wxID_ANY, title) {
 	wxPanel* firstPanel = new wxPanel(this, wxID_ANY, wxPoint(0, 0), wxSize(800,800));
@@ -12,7 +13,7 @@ MainFrame::MainFrame(const wxString& title) : wxFrame(nullptr, wxID_ANY, title) 
 	secondPanel->SetBackgroundColour(wxColor(0, 0, 200));
 
 
-	CreateButtons(sizer, firstPanel);
+	CreateButtons(firstPanel); //second arg is wxWindows, but panel is accepted (because subclass of wxWindows maybe?)
 	CreateStatusBar();
 
 	wxButton* switchScreenButton = new wxButton(secondPanel, wxID_ANY, "Switch Screens", wxPoint(500, 700), wxSize(100, 50));
@@ -20,35 +21,11 @@ MainFrame::MainFrame(const wxString& title) : wxFrame(nullptr, wxID_ANY, title) 
 
 }
 
-void MainFrame::SwitchButtonClicked(wxCommandEvent& evt) {
-	
-	if (this->GetChildren()[0]->GetChildren().size() == 0) {
-		CreateButtons(sizer, this->GetChildren()[0]);
-		wxLogStatus("Children restored");
-	}
-	else {
-		this->GetChildren()[0]->DestroyChildren();
-		wxLogStatus("Children successfully destroyed");
-	}
-}
-
-
-/*
-Loop that adds inline button, where y(location of button) increments until reaches a certain point,
-moves to the next column of buttons.
-
-Second loop then edits each inline button color
-*/
-void MainFrame::CreateButtons(wxBoxSizer* sizer, wxWindow* panel) {
+void MainFrame::CreateListBox(wxWindow* panel) {
 	int x = 150;
 	int y = 100;
 	for (int i = 0; i < 15; i++) {
-		sizer->Add(new wxButton(panel, wxID_ANY, "", wxPoint(x, y), wxSize(75, 75)),
-			1,
-			wxEXPAND | wxALL,
-			10
-		);
-
+		new wxListBox(panel, wxID_ANY, wxPoint(x, y), wxSize(75, 75));
 		y += 120;
 		if (y == 700) {
 			x += 150;
@@ -56,13 +33,51 @@ void MainFrame::CreateButtons(wxBoxSizer* sizer, wxWindow* panel) {
 		}
 	}
 
-	for (int i = 0; i < panel->GetChildren().size(); i++) { //why this works, and not the other, is unclear.
-		panel->GetChildren()[i]->SetBackgroundColour(wxColor(0, 0, 0));
+	for (int i = 0; i < panel->GetChildren().size(); i++) {
+		panel->GetChildren()[i]->SetBackgroundColour(wxColor(0, 0, 200));
+	}
+}
+
+/*
+	Loop that adds inline button, where y(location of button) increments until reaches a certain point,
+	moves to the next column of buttons.
+
+	Second loop then edits each inline button color
+*/
+void MainFrame::CreateButtons(wxWindow* panel) {
+	int x = 150;
+	int y = 100;
+	for (int i = 0; i < 15; i++) {
+		new wxButton(panel, wxID_ANY, "", wxPoint(x, y), wxSize(75, 75));
+		y += 120;
+		if (y == 700) {
+			x += 150;
+			y = 100;
+		}
 	}
 
-	/*
-	for (auto it = panel->GetChildren().begin(); it != panel->GetChildren().end(); ++it) {
-		it -> SetBackgroundColour(wxColor(0, 0, 0));
+	for (int i = 0; i < panel->GetChildren().size(); i++) { 
+		panel->GetChildren()[i]->SetBackgroundColour(wxColor(0, 0, 0));
 	}
-	*/
+}
+
+/*
+	Uses global flag to determine which function to use on button click.
+	Destroys all current children of panel, creates new children on each instance
+	Sets flag to opposite value on each click
+*/
+void MainFrame::SwitchButtonClicked(wxCommandEvent& evt) {
+
+	if (panelFlag == false) {
+		this->GetChildren()[0]->DestroyChildren();
+		CreateButtons(this->GetChildren()[0]);
+		panelFlag = true;
+		wxLogStatus("Buttons created");
+	}
+	else if (panelFlag == true) {
+		this->GetChildren()[0]->DestroyChildren();
+		CreateListBox(this->GetChildren()[0]);
+		panelFlag = false;
+		wxLogStatus("Listboxes created");
+	}
 }
