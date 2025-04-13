@@ -9,15 +9,19 @@ public:
 	};
 
 	struct dataset {
-		Unique id;
-		std::vector<std::string> dataset;
+		int id_ = 0;
+		std::vector<std::string> dataset_;
+		int numOfPatrons_ = 0;
 	};
 
 	MainFrame(const wxString& title); //wxstring is str implementation of wxwidgets
 	void CreateButtons(wxWindow* panel);
 	void SwitchButtonClicked(wxCommandEvent& evt);
 	void CreateListBox(wxWindow* panel);
+	bool AddNumberOfPatrons(int& id);
+	void OnButtonClick(wxCommandEvent& evt);
 	void WriteAndRead(wxListBox* panel);
+	bool FindIdOfButton(int& id);
 	Unique SwitchID(Unique& id);
 
 private:

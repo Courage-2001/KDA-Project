@@ -16,7 +16,7 @@ MainFrame::MainFrame(const wxString& title) : wxFrame(nullptr, wxID_ANY, title) 
 
 	wxButton* switchScreenButton = new wxButton(secondPanel, wxID_ANY, "Switch Screens", wxPoint(500, 700), wxSize(100, 50));
 	//may remove listbox for some sort of choice box instead
-	wxEditableListBox* listBox = new wxEditableListBox(secondPanel, wxID_ANY, "Enter entries here", wxPoint(0, 100), wxSize(500, 600));
+	//wxEditableListBox* listBox = new wxEditableListBox(secondPanel, wxID_ANY, "Enter entries here", wxPoint(0, 100), wxSize(500, 600));
 	switchScreenButton->Bind(wxEVT_BUTTON, &MainFrame::SwitchButtonClicked, this);
 
 }
@@ -25,14 +25,28 @@ MainFrame::MainFrame(const wxString& title) : wxFrame(nullptr, wxID_ANY, title) 
 void MainFrame::WriteAndRead(wxListBox* box) {
 }
 
+/*
+	Loops that adds inline buttons, where y(location of button) increments until reaches a certain point,
+	moves to the next column of buttons.
+
+	CreateButtons() will remember color from previous instance, if id on creation is present already in container. Every
+	button is also binded on runtime, to OnButtonClick(). 
+
+	NOTE: Unique enum does not work when retrieving from wxWidgets functions, must figure out alternative. 
+		  For now, id of type inter is to represent table number 
+		  (where ID of 2 represents table 1 , ID of 3 is table 2, and so on because numbers 0 & 1 are offlimits for framework)
+*/
+
 void MainFrame::CreateListBox(wxWindow* panel) {
-	Unique id = Table1;
+	//Unique id = Table1;
+	int id = 2;
 	int x = 150;
 	int y = 20;
 	for (int i = 0; i < 15; i++) {
 		new wxListBox(panel, id, wxPoint(x, y), wxSize(100, 150), {"hello", "bye"});
 		panel->GetChildren()[i]->SetBackgroundColour(wxColor(0, 0, 200));
-		SwitchID(id);
+		id++;
+		//SwitchID(id);
 		y += 200;
 		if (y == 1020) {
 			x += 150;
@@ -41,26 +55,58 @@ void MainFrame::CreateListBox(wxWindow* panel) {
 	}
 }
 
-/*
-	Loop that adds inline button, where y(location of button) increments until reaches a certain point,
-	moves to the next column of buttons.
-
-	Second loop then edits each inline button color
-*/
 void MainFrame::CreateButtons(wxWindow* panel) {
-	Unique id = Table1;
+	//Unique id = Table1;
+	int id = 2;
 	int x = 150;
 	int y = 100;
 	for (int i = 0; i < 15; i++) {
-		new wxButton(panel, wxID_ANY, "", wxPoint(x, y), wxSize(75, 75));
-		panel->GetChildren()[i]->SetBackgroundColour(wxColor(0, 0, 0));
-		SwitchID(id);
+		new wxButton(panel, id, "", wxPoint(x, y), wxSize(75, 75));
+
+		if(FindIdOfButton(id)) panel->GetChildren()[i]->SetBackgroundColour(wxColor(0, 255, 0));
+		else panel->GetChildren()[i]->SetBackgroundColour(wxColor(0, 0, 0));
+
+		panel->GetChildren()[i]->Bind(wxEVT_BUTTON, &MainFrame::OnButtonClick, this);
+		id++;
+		//SwitchID(id);
 		y += 120;
 		if (y == 700) {
 			x += 150;
 			y = 100;
 		}
 	}
+}
+
+/*
+	Function that creates a dialog, intended purpose is to take an input integer by user, then write to the container
+	id and number of patrons, which is then fed into OnButtonClick event, changing color of button and pushing back data.
+
+	returns true if id is not present in container, false if id is present in container already
+*/
+bool MainFrame::AddNumberOfPatrons(int& id) {
+
+	for (auto it = container.begin(); it != container.end(); ++it) {
+		if (it->id_ == id)
+			return false;
+	}
+
+	wxDialog* dialog = new wxDialog(this, wxID_ANY, "Enter how many patrons are being sat", wxPoint(500, 300), wxDefaultSize);
+	wxButton* button = new wxButton(dialog, wxID_ANY, "Confirm");
+	dialog->ShowModal();
+
+	dataset temp = { 0, {}, 0 }; 
+	temp.id_ = id;
+
+	container.push_back(temp);
+	return true;
+}
+
+bool MainFrame::FindIdOfButton(int& id) {
+	for (auto it = container.begin(); it != container.end(); ++it) {
+		if (it->id_ == id)
+			return true;
+	}
+	return false;
 }
 
 /*
@@ -82,6 +128,16 @@ void MainFrame::SwitchButtonClicked(wxCommandEvent& evt) {
 		panelFlag = false;
 		wxLogStatus("Listboxes created");
 	}
+}
+
+void MainFrame::OnButtonClick(wxCommandEvent& evt) {
+	int buttonID = evt.GetId();
+	if (AddNumberOfPatrons(buttonID)) {
+		this->FindWindowById(buttonID)->SetBackgroundColour(wxColor(0, 255, 0));
+		wxLogStatus("Color of button has changed, and id is also present in container");
+	}
+	else
+		wxLogStatus("ID exist already (implying patrons are being sat currently)");
 }
 
 MainFrame::Unique MainFrame::SwitchID(Unique& id) {
