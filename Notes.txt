@@ -9,3 +9,13 @@ IMPORTANT:
         5) expand linker settings and click on system. change subsystem -> windows subsystem and click apply
         6) set platform to Win32, goto general in linker and for additional lib dir, write $(WXWIN)\lib\vc_lib
         7) set platform to x64 and for additional lib dir, write $(WXWIN)\lib\vc_x64_lib and then click apply
+
+
+TO DO:
+    1) Add functionality to AddNumberOfPatrons(), recieving input and returning it to EndModal() and updating container with data
+    2) Figure out a way to create a menu that user can set dishes patrons ordered (listBox or a choiceBox)
+    3) Have said orders be in the container, and retrieve anytime we swtich screens 
+    4) Display orders properly in second screen full of listBoxes
+    4) Change colors of table during phases of dining (green for present, orange for waiting, red for done, black when empty)
+    5) Have a working csv (read and write) when it comes to tracking popular dishes, amount of customers per day, etc.
+    6) Polish the UI (Never!)

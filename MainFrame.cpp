@@ -36,7 +36,6 @@ void MainFrame::WriteAndRead(wxListBox* box) {
 		  For now, id of type inter is to represent table number 
 		  (where ID of 2 represents table 1 , ID of 3 is table 2, and so on because numbers 0 & 1 are offlimits for framework)
 */
-
 void MainFrame::CreateListBox(wxWindow* panel) {
 	//Unique id = Table1;
 	int id = 2;
@@ -130,6 +129,9 @@ void MainFrame::SwitchButtonClicked(wxCommandEvent& evt) {
 	}
 }
 
+/*
+	All buttons created on firstPanel, are binded on runtime. If AddNumberOfPatrons is true, change color. If false, do nothing
+*/
 void MainFrame::OnButtonClick(wxCommandEvent& evt) {
 	int buttonID = evt.GetId();
 	if (AddNumberOfPatrons(buttonID)) {
