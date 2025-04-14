@@ -69,7 +69,6 @@ void MainFrame::CreateButtons(wxWindow* panel) {
 
 		panel->GetChildren()[i]->Bind(wxEVT_BUTTON, &MainFrame::OnButtonClick, this);
 		id++;
-		//SwitchID(id);
 		y += 120;
 		if (y == 700) {
 			x += 150;
@@ -99,17 +98,64 @@ bool MainFrame::AddNumberOfPatrons(int& id) {
 		temp.numOfPatrons_ = patronNumber;
 	}
 	
-	container.push_back(temp);
+	container_.push_back(temp);
+	return true;
+}
+
+//need to incoporate orderButton with a new event that will take in all listBoxes choices, and will move forward
+//with only when all boxes have a choice selected, then push into dataset and delete all children of secondPanel (excluding switch)
+//need to figure out how bool flag will work for AddOrderOfPatrons() when in tandem with OnButtonClick() !
+bool MainFrame::AddOrderOfPatrons(int& id) {
+	int x = 200;
+	int tempId = 40;
+	int index = FindIndexOfId(id);
+	wxChoice* choicePtr = nullptr;
+	wxButton* orderButton = new wxButton(this->GetChildren()[1], 26, "Confirm", wxPoint(300, 500), wxSize(75, 50));
+
+	for (int i = 0; i < GetContainer()[index].numOfPatrons_; i++) {
+		new wxChoice(this->GetChildren()[1], tempId, wxPoint(x, 200), wxDefaultSize,
+			{ "Seafood", "Meat", "Combination" }, 0L, wxDefaultValidator, "Choose category of dishes");
+		choicePtr = (wxChoice*)this->FindWindowById(tempId);
+		choicePtr->Bind(wxEVT_CHOICE, &MainFrame::CreateOptionsOnClick, this);
+		x += 100;
+		tempId++;
+	}
 	return true;
 }
 
 bool MainFrame::FindIdOfButton(int& id) {
-	for (auto it = container.begin(); it != container.end(); ++it) {
+	for (auto it = container_.begin(); it != container_.end(); ++it) {
 		if (it->id_ == id)
 			return true;
 	}
 	return false;
 }
+
+int MainFrame::FindIndexOfId(int& id) const {
+	int i = 0;
+	for (auto it = container_.begin(); it != container_.end(); ++it) {
+		if (it->id_ == id) return i;
+		i++;
+	}
+	return -1;
+}
+
+std::vector<MainFrame::dataset> MainFrame::GetContainer() const {
+	return container_;
+}
+
+wxArrayString MainFrame::GetSeafood() const {
+	return seafood_;
+}
+
+wxArrayString MainFrame::GetMeat() const {
+	return meat_;
+}
+
+wxArrayString MainFrame::GetCombination() const {
+	return combination_;
+}
+
 
 /*
 	Uses global flag to determine which function to use on button click.
@@ -142,7 +188,10 @@ void MainFrame::OnButtonClick(wxCommandEvent& evt) {
 		wxLogStatus("Color of button has changed, ID and number of patrons have been updated and inserted in container");
 	}
 	else
-		wxLogStatus("ID exist already (implying patrons are being sat currently)");
+		if (AddOrderOfPatrons(buttonID)) {
+			this->FindWindowById(buttonID)->SetBackgroundColour(wxColor(255, 165, 0));
+			wxLogStatus("Order has been placed! (id exist, and order pushed onto container");
+		}
 }
 
 /*
@@ -159,6 +208,24 @@ void MainFrame::UpdatePatronNumberOnClick(wxCommandEvent& evt) {
 	exitPtr->EndModal(0);
 	delete exitPtr;
 	exitPtr = nullptr;
+}
+
+void MainFrame::CreateOptionsOnClick(wxCommandEvent& evt) {
+	wxChoice* tempPtr = (wxChoice*)this->FindWindowById(evt.GetId());
+	int tempId = evt.GetId() + 5;
+
+	if (tempPtr->GetSelection() == 0) {
+		if(this->FindWindowById(tempId) != NULL) this->FindWindowById(tempId)->Destroy();
+		wxListBox* seafoodBox = new wxListBox(this->GetChildren()[1], tempId, wxPoint(tempPtr->GetPosition().x, 350), wxDefaultSize, GetSeafood());
+	}
+	else if (tempPtr->GetSelection() == 1) {
+		if (this->FindWindowById(tempId) != NULL) this->FindWindowById(tempId)->Destroy();
+		wxListBox* meatBox = new wxListBox(this->GetChildren()[1], tempId, wxPoint(tempPtr->GetPosition().x, 350), wxDefaultSize, GetMeat());
+	}
+	else if (tempPtr->GetSelection() == 2) {
+		if (this->FindWindowById(tempId) != NULL) this->FindWindowById(tempId)->Destroy();
+		wxListBox* combinationBox = new wxListBox(this->GetChildren()[1], tempId, wxPoint(tempPtr->GetPosition().x, 350), wxDefaultSize, GetCombination());
+	}
 }
 
 MainFrame::Unique MainFrame::SwitchID(Unique& id) {

@@ -1,6 +1,7 @@
 #pragma once
 #include <wx/wx.h>
 #include <string>
+#include <array>
 #include <wx/spinctrl.h>
 
 class MainFrame : public wxFrame { //mainframe inherits from wxFrame
@@ -11,7 +12,7 @@ public:
 
 	struct dataset {
 		int id_ = 0;
-		std::vector<std::string> dataset_;
+		std::string order_ = " ";
 		int numOfPatrons_ = 0;
 	};
 
@@ -19,14 +20,24 @@ public:
 	void CreateButtons(wxWindow* panel);
 	void CreateListBox(wxWindow* panel);
 	bool AddNumberOfPatrons(int& id);
+	bool AddOrderOfPatrons(int& id);
 	void WriteAndRead(wxListBox* panel);
 	bool FindIdOfButton(int& id);
+	int FindIndexOfId(int& id) const;
+	std::vector<dataset> GetContainer() const;
+	wxArrayString GetSeafood() const;
+	wxArrayString GetMeat() const;
+	wxArrayString GetCombination() const;
 	Unique SwitchID(Unique& id);
 	void OnButtonClick(wxCommandEvent& evt);
 	void SwitchButtonClicked(wxCommandEvent& evt);
 	void UpdatePatronNumberOnClick(wxCommandEvent& evt);
+	void CreateOptionsOnClick(wxCommandEvent& evt);
 
 private:
-	std::vector<dataset> container;
+	std::vector<dataset> container_;
+	wxArrayString seafood_ = { "Lobster", "Crab", "Seabass", "Tuna", "Scallops" };
+	wxArrayString meat_ = {"Steak", "Veal", "Chicken", "Lamb", "Porkchops"};
+	wxArrayString combination_ = {"Steak and Lobster", "Surf and Turf", "Chicken and Steak", "Shrimp over Linguini", "Steak with Shrimp"};
 };
 
