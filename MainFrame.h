@@ -1,6 +1,7 @@
 #pragma once
 #include <wx/wx.h>
 #include <string>
+#include <wx/spinctrl.h>
 
 class MainFrame : public wxFrame { //mainframe inherits from wxFrame
 public:
@@ -16,13 +17,14 @@ public:
 
 	MainFrame(const wxString& title); //wxstring is str implementation of wxwidgets
 	void CreateButtons(wxWindow* panel);
-	void SwitchButtonClicked(wxCommandEvent& evt);
 	void CreateListBox(wxWindow* panel);
 	bool AddNumberOfPatrons(int& id);
-	void OnButtonClick(wxCommandEvent& evt);
 	void WriteAndRead(wxListBox* panel);
 	bool FindIdOfButton(int& id);
 	Unique SwitchID(Unique& id);
+	void OnButtonClick(wxCommandEvent& evt);
+	void SwitchButtonClicked(wxCommandEvent& evt);
+	void UpdatePatronNumberOnClick(wxCommandEvent& evt);
 
 private:
 	std::vector<dataset> container;

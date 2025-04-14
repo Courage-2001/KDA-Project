@@ -1,8 +1,10 @@
 #include "MainFrame.h"
-#include <wx/wx.h>
+//#include <wx/wx.h>
 #include <wx/editlbox.h>
 
+//temporary global variables, will figure out solution to remove eventually
 bool panelFlag = true;
+int patronNumber = 0;
 
 MainFrame::MainFrame(const wxString& title) : wxFrame(nullptr, wxID_ANY, title) {
 	wxPanel* firstPanel = new wxPanel(this, wxID_ANY, wxPoint(0, 0), wxSize(800,800));
@@ -83,19 +85,20 @@ void MainFrame::CreateButtons(wxWindow* panel) {
 	returns true if id is not present in container, false if id is present in container already
 */
 bool MainFrame::AddNumberOfPatrons(int& id) {
+	if (FindIdOfButton(id)) return false;
 
-	for (auto it = container.begin(); it != container.end(); ++it) {
-		if (it->id_ == id)
-			return false;
+	wxDialog* dialog = new wxDialog(this, 25, "Enter how many patrons are being sat", wxPoint(500, 300), wxDefaultSize);
+	wxButton* button = new wxButton(dialog, wxID_ANY, "Confirm", wxPoint(150, 100), wxSize(75, 50));
+	wxSpinCtrl* spinCtrl = new wxSpinCtrl(dialog, 50, wxEmptyString, wxPoint(165, 75), wxDefaultSize, 16384L, 1, 4);
+	dataset temp = { 0, {}, 0 };
+	button->Bind(wxEVT_BUTTON, &MainFrame::UpdatePatronNumberOnClick, this);
+
+	//if UpdatePatronOnClick event terminates dialog, update variables
+	if (dialog->ShowModal() != wxID_OK) {
+		temp.id_ = id;
+		temp.numOfPatrons_ = patronNumber;
 	}
-
-	wxDialog* dialog = new wxDialog(this, wxID_ANY, "Enter how many patrons are being sat", wxPoint(500, 300), wxDefaultSize);
-	wxButton* button = new wxButton(dialog, wxID_ANY, "Confirm");
-	dialog->ShowModal();
-
-	dataset temp = { 0, {}, 0 }; 
-	temp.id_ = id;
-
+	
 	container.push_back(temp);
 	return true;
 }
@@ -136,10 +139,26 @@ void MainFrame::OnButtonClick(wxCommandEvent& evt) {
 	int buttonID = evt.GetId();
 	if (AddNumberOfPatrons(buttonID)) {
 		this->FindWindowById(buttonID)->SetBackgroundColour(wxColor(0, 255, 0));
-		wxLogStatus("Color of button has changed, and id is also present in container");
+		wxLogStatus("Color of button has changed, ID and number of patrons have been updated and inserted in container");
 	}
 	else
 		wxLogStatus("ID exist already (implying patrons are being sat currently)");
+}
+
+/*
+	Event that creates ptrs pointing to existing controls within mainframe
+	Updates global var with value of spinctrl, and calls dialog method EndModal() when user clicks confirm
+*/
+void MainFrame::UpdatePatronNumberOnClick(wxCommandEvent& evt) {
+	wxSpinCtrl* tempPtr = (wxSpinCtrl *)this->FindWindowById(50);
+	wxDialog* exitPtr = (wxDialog*)this->FindWindowById(25);
+	patronNumber = tempPtr->GetValue();
+
+	delete tempPtr;
+	tempPtr = nullptr;
+	exitPtr->EndModal(0);
+	delete exitPtr;
+	exitPtr = nullptr;
 }
 
 MainFrame::Unique MainFrame::SwitchID(Unique& id) {
