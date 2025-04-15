@@ -15,6 +15,7 @@ public:
 		wxArrayString order_ = {};
 		int numOfPatrons_ = 0;
 		bool order_placed_ = false;
+		bool people_sat_ = false;
 	};
 
 	MainFrame(const wxString& title); //wxstring is str implementation of wxwidgets
@@ -36,7 +37,6 @@ public:
 	void UpdateOrdersOnClick(wxCommandEvent& evt);
 
 private:
-	bool flag = false;
 	int num_of_patrons_ = 0;
 	wxArrayString event_container_;
 	std::vector<dataset> container_;

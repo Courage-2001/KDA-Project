@@ -1,6 +1,5 @@
 #include "App.h"
 #include "MainFrame.h"
-#include <wx/wx.h>
 
 wxIMPLEMENT_APP(App); //lets wxWdigets know which class represents our app, will generate main func, instance of app & call OnInit
 
