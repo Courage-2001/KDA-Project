@@ -12,8 +12,9 @@ public:
 
 	struct dataset {
 		int id_ = 0;
-		std::string order_ = " ";
+		wxArrayString order_ = {};
 		int numOfPatrons_ = 0;
+		bool order_placed_ = false;
 	};
 
 	MainFrame(const wxString& title); //wxstring is str implementation of wxwidgets
@@ -21,7 +22,6 @@ public:
 	void CreateListBox(wxWindow* panel);
 	bool AddNumberOfPatrons(int& id);
 	bool AddOrderOfPatrons(int& id);
-	void WriteAndRead(wxListBox* panel);
 	bool FindIdOfButton(int& id);
 	int FindIndexOfId(int& id) const;
 	std::vector<dataset> GetContainer() const;
@@ -33,8 +33,12 @@ public:
 	void SwitchButtonClicked(wxCommandEvent& evt);
 	void UpdatePatronNumberOnClick(wxCommandEvent& evt);
 	void CreateOptionsOnClick(wxCommandEvent& evt);
+	void UpdateOrdersOnClick(wxCommandEvent& evt);
 
 private:
+	bool flag = false;
+	int num_of_patrons_ = 0;
+	wxArrayString event_container_;
 	std::vector<dataset> container_;
 	wxArrayString seafood_ = { "Lobster", "Crab", "Seabass", "Tuna", "Scallops" };
 	wxArrayString meat_ = {"Steak", "Veal", "Chicken", "Lamb", "Porkchops"};

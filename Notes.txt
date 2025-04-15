@@ -1,6 +1,6 @@
 
 IMPORTANT:
-    Since installing library, we must set up the enviroment on every new solution we create for a c++ project.
+    Since installing library, we must set up the enviroment on every new solution we create for a c++ project using wxWidgets.
     Steps to take:
         1) Make sure cpp file exist in order to edit properties of solution
         2) right click on solution and go to properties
@@ -9,6 +9,14 @@ IMPORTANT:
         5) expand linker settings and click on system. change subsystem -> windows subsystem and click apply
         6) set platform to Win32, goto general in linker and for additional lib dir, write $(WXWIN)\lib\vc_lib
         7) set platform to x64 and for additional lib dir, write $(WXWIN)\lib\vc_x64_lib and then click apply
+
+ID's being used:
+    - ID's 2-16 are being used for Listboxes (orders) and Button (tables)
+    - ID 25 is used to instantiate dialog control on event
+    - ID 50 is used to instantiate spin control on event
+    - ID 40-43 are used on generated choice box(es) when selecting category of food for customer orders
+    - ID 26 is used for the confirm button that is generated to confirm selection of orders
+    - ID's 45-48 are used to represent listBoxes tied to the ID's of the generated choice boxes (ID + 5)
 
 
 TO DO:
