@@ -296,7 +296,6 @@ void MainFrame::createOptionsOnClick(wxCommandEvent& evt) {
 	Once matched, modal will end, activates rest of AddOrderOfPatrons()
 */
 void MainFrame::updateOrdersOnClick(wxCommandEvent& evt) {
-	//wxListBox* listPtr = nullptr;
 	dialog_ = (wxDialog*)this->FindWindowById(27);
 	int tempID = 45;
 	for (int i = 0; i < num_patrons_; i++) {
