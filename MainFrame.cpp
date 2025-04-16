@@ -4,6 +4,17 @@
 bool panelFlag = true;
 
 MainFrame::MainFrame(const wxString& title) : wxFrame(nullptr, wxID_ANY, title) {
+	num_patrons_ = 0;
+	event_container_ = {};
+	container_ = {};
+	listbox_ = nullptr;
+	choice_ = nullptr;
+	spin_ = nullptr;
+	dialog_ = nullptr;
+	seafood_ = { "Lobster", "Crab", "Seabass", "Tuna", "Scallops" };
+	meat_ = { "Steak", "Veal", "Chicken", "Lamb", "Porkchops" };
+	combination_ = { "Steak and Lobster", "Surf and Turf", "Chicken and Steak", "Shrimp over Linguini", "Steak with Shrimp" };
+
 	wxPanel* firstPanel = new wxPanel(this, wxID_ANY, wxPoint(0, 0), wxSize(800,800));
 	wxPanel* secondPanel = new wxPanel(this, wxID_ANY, wxPoint(800, 0), wxSize(750, 800));
 	firstPanel->SetBackgroundColour(wxColor(0, 0, 200));
@@ -40,9 +51,9 @@ void MainFrame::createListBox(wxWindow* panel) {
 		new wxListBox(panel, id, wxPoint(x, y), wxSize(120, 100), {});
 
 		if (index != -1) {
-			if (container_[index].s_has_ordered == true) {
-				wxListBox* boxPtr = (wxListBox*)panel->GetChildren()[i];
-				boxPtr->InsertItems(container_[index].s_order, 0);
+			if (getContainer()[index].s_has_ordered == true) {
+				listbox_ = (wxListBox*)panel->GetChildren()[i];
+				listbox_->InsertItems(getContainer()[index].s_order, 0);
 			}
 		}
 
@@ -68,10 +79,10 @@ void MainFrame::createButtons(wxWindow* panel) {
 		index = findIndex(id);
 
 		if (index != -1) {
-			if (container_[index].s_has_ordered == true) {
+			if (getContainer()[index].s_has_ordered == true) {
 				panel->GetChildren()[i]->SetBackgroundColour(wxColor(255, 165, 0));
 			}
-			else if (container_[index].s_has_people == true) {
+			else if (getContainer()[index].s_has_people == true) {
 				panel->GetChildren()[i]->SetBackgroundColour(wxColor(0, 255, 0));
 			}
 		}
@@ -99,7 +110,7 @@ void MainFrame::createButtons(wxWindow* panel) {
 bool MainFrame::hasPatrons(int& id) {
 	int index = findIndex(id);
 	if(index != -1)
-		if (getContainer()[index].s_has_people == true) return false;
+		if (container_[index].s_has_people == true) return false;
 
 	wxDialog* dialog = new wxDialog(this, 25, "Enter how many patrons are being sat", wxPoint(500, 300), wxDefaultSize);
 	wxButton* button = new wxButton(dialog, wxID_ANY, "Confirm", wxPoint(150, 100), wxSize(75, 50));
@@ -130,37 +141,36 @@ bool MainFrame::hasPatrons(int& id) {
 bool MainFrame::hasOrders(int& id) {
 	event_container_.clear();
 	int index = findIndex(id);
-	if (getContainer()[index].s_has_ordered == true) return false;
+	if (container_[index].s_has_ordered == true) return false;
 
 	int x = 10;
 	int tempId = 40;
 	wxDialog* dialog = new wxDialog(this, 27, "Order Menu", wxPoint(500, 300), wxSize(720, 400));
-	wxChoice* choicePtr = nullptr;
 	wxButton* orderButton = new wxButton(dialog, 26, "Confirm", wxPoint(300, 300), wxSize(75, 50));
 	orderButton->Bind(wxEVT_BUTTON, &MainFrame::updateOrdersOnClick, this);
 
-	if (getContainer()[index].s_patrons_sat == 3) {
+	if (container_[index].s_patrons_sat == 3) {
 		dialog->SetSize(wxSize(540, 400));
 		orderButton->SetSize(wxSize(75, 50));
 		orderButton->SetPosition(wxPoint(200, 300));
 	}
-	else if (getContainer()[index].s_patrons_sat == 2) {
+	else if (container_[index].s_patrons_sat == 2) {
 		dialog->SetSize(wxSize(365, 400));
 		orderButton->SetSize(wxSize(75, 50));
 		orderButton->SetPosition(wxPoint(140, 300));
 	}
-	else if (getContainer()[index].s_patrons_sat == 1) {
+	else if (container_[index].s_patrons_sat == 1) {
 		dialog->SetSize(wxSize(190, 400));
 		orderButton->SetSize(wxSize(75, 50));
 		orderButton->SetPosition(wxPoint(40, 300));
 	}
 
 
-	for (int i = 0; i < getContainer()[index].s_patrons_sat; i++) {
+	for (int i = 0; i < container_[index].s_patrons_sat; i++) {
 		new wxChoice(dialog, tempId, wxPoint(x, 50), wxDefaultSize,
 			{ "Seafood", "Meat", "Combination" }, 0L, wxDefaultValidator, "Choose category of dishes");
-		choicePtr = (wxChoice*)this->FindWindowById(tempId);
-		choicePtr->Bind(wxEVT_CHOICE, &MainFrame::createOptionsOnClick, this);
+		choice_ = (wxChoice*)this->FindWindowById(tempId);
+		choice_->Bind(wxEVT_CHOICE, &MainFrame::createOptionsOnClick, this);
 		x += 175;
 		tempId++;
 	}
@@ -171,14 +181,6 @@ bool MainFrame::hasOrders(int& id) {
 		event_container_.clear();
 	}
 	return true;
-}
-
-bool MainFrame::findButtonId(int& id) {
-	for (auto it = container_.begin(); it != container_.end(); ++it) {
-		if (it->id_ == id)
-			return true;
-	}
-	return false;
 }
 
 int MainFrame::findIndex(int& id) const {
@@ -254,13 +256,13 @@ void MainFrame::onButtonClick(wxCommandEvent& evt) {
 	which will activate rest of AddNumberOfPatrons()
 */
 void MainFrame::updatePatronNumberOnClick(wxCommandEvent& evt) {
-	wxSpinCtrl* tempPtr = (wxSpinCtrl *)this->FindWindowById(50);
-	wxDialog* exitPtr = (wxDialog*)this->FindWindowById(25);
-	num_patrons_ = tempPtr->GetValue();
+	spin_ = (wxSpinCtrl *)this->FindWindowById(50);
+	dialog_ = (wxDialog*)this->FindWindowById(25);
+	num_patrons_ = spin_->GetValue();
 
-	exitPtr->EndModal(0);
-	delete exitPtr;
-	exitPtr = nullptr;
+	dialog_->EndModal(0);
+	delete dialog_;
+	dialog_ = nullptr;
 }
 
 /*
@@ -269,21 +271,21 @@ void MainFrame::updatePatronNumberOnClick(wxCommandEvent& evt) {
 	terminates window whenver user selects new category of food, instantiating a new window right after, reflecting choice
 */
 void MainFrame::createOptionsOnClick(wxCommandEvent& evt) {
-	wxChoice* tempPtr = (wxChoice*)this->FindWindowById(evt.GetId());
+	choice_ = (wxChoice*)this->FindWindowById(evt.GetId());
 	int tempId = evt.GetId() + 5;
-	wxDialog* dialogPtr = (wxDialog*)this->FindWindowById(27);
+	dialog_ = (wxDialog*)this->FindWindowById(27);
 
-	if (tempPtr->GetSelection() == 0) {
+	if (choice_->GetSelection() == 0) {
 		if(this->FindWindowById(tempId) != NULL) this->FindWindowById(tempId)->Destroy();
-		wxListBox* seafoodBox = new wxListBox(dialogPtr, tempId, wxPoint(tempPtr->GetPosition().x, 150), wxDefaultSize, getSeafood());
+		listbox_ = new wxListBox(dialog_, tempId, wxPoint(choice_->GetPosition().x, 150), wxDefaultSize, getSeafood());
 	}
-	else if (tempPtr->GetSelection() == 1) {
+	else if (choice_->GetSelection() == 1) {
 		if (this->FindWindowById(tempId) != NULL) this->FindWindowById(tempId)->Destroy();
-		wxListBox* meatBox = new wxListBox(dialogPtr, tempId, wxPoint(tempPtr->GetPosition().x, 150), wxDefaultSize, getMeat());
+		listbox_ = new wxListBox(dialog_, tempId, wxPoint(choice_->GetPosition().x, 150), wxDefaultSize, getMeat());
 	}
-	else if (tempPtr->GetSelection() == 2) {
+	else if (choice_->GetSelection() == 2) {
 		if (this->FindWindowById(tempId) != NULL) this->FindWindowById(tempId)->Destroy();
-		wxListBox* combinationBox = new wxListBox(dialogPtr, tempId, wxPoint(tempPtr->GetPosition().x, 150), wxDefaultSize, getCombination());
+		listbox_ = new wxListBox(dialog_, tempId, wxPoint(choice_->GetPosition().x, 150), wxDefaultSize, getCombination());
 	}
 }
 
@@ -294,14 +296,14 @@ void MainFrame::createOptionsOnClick(wxCommandEvent& evt) {
 	Once matched, modal will end, activates rest of AddOrderOfPatrons()
 */
 void MainFrame::updateOrdersOnClick(wxCommandEvent& evt) {
-	wxListBox* listPtr = nullptr;
-	wxDialog* exitPtr2 = (wxDialog*)this->FindWindowById(27);
+	//wxListBox* listPtr = nullptr;
+	dialog_ = (wxDialog*)this->FindWindowById(27);
 	int tempID = 45;
 	for (int i = 0; i < num_patrons_; i++) {
-		listPtr = (wxListBox*)this->FindWindowById(tempID);
-		if (listPtr == nullptr) break;
-		else if(listPtr->GetStringSelection() != "") //BUG: if no choice is selected, and you press confirm, error thrown (RESOLVED)
-			event_container_.Add(listPtr->GetStringSelection());
+		listbox_ = (wxListBox*)this->FindWindowById(tempID);
+		if (listbox_ == nullptr) break;
+		else if(listbox_->GetStringSelection() != "") //BUG: if no choice is selected, and you press confirm, error thrown (RESOLVED)
+			event_container_.Add(listbox_->GetStringSelection());
 		tempID++;
 	}
 
@@ -310,9 +312,9 @@ void MainFrame::updateOrdersOnClick(wxCommandEvent& evt) {
 		event_container_.clear();
 	}
 	else if(event_container_.size() ==  num_patrons_) {
-		exitPtr2->EndModal(0);
-		delete exitPtr2;
-		exitPtr2 = nullptr;
+		dialog_->EndModal(0);
+		delete dialog_;
+		dialog_ = nullptr;
 	}
 }
 

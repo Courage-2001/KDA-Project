@@ -36,11 +36,15 @@ public:
 	void updateOrdersOnClick(wxCommandEvent& evt);
 
 private:
-	int num_patrons_ = 0;
+	int num_patrons_;
 	wxArrayString event_container_;
 	std::vector<dataset> container_;
-	wxArrayString seafood_ = { "Lobster", "Crab", "Seabass", "Tuna", "Scallops" };
-	wxArrayString meat_ = {"Steak", "Veal", "Chicken", "Lamb", "Porkchops"};
-	wxArrayString combination_ = {"Steak and Lobster", "Surf and Turf", "Chicken and Steak", "Shrimp over Linguini", "Steak with Shrimp"};
+	wxListBox* listbox_;
+	wxChoice* choice_;
+	wxSpinCtrl* spin_;
+	wxDialog* dialog_;
+	wxArrayString seafood_;
+	wxArrayString meat_;
+	wxArrayString combination_;
 };
 
