@@ -11,33 +11,32 @@ public:
 	};
 
 	struct dataset {
-		int id_ = 0;
-		wxArrayString order_ = {};
-		int numOfPatrons_ = 0;
-		bool order_placed_ = false;
-		bool people_sat_ = false;
+		int s_id = 0;
+		wxArrayString s_order = {};
+		int s_patrons_sat = 0;
+		bool s_has_ordered = false;
+		bool s_has_people = false;
 	};
 
 	MainFrame(const wxString& title); //wxstring is str implementation of wxwidgets
-	void CreateButtons(wxWindow* panel);
-	void CreateListBox(wxWindow* panel);
-	bool AddNumberOfPatrons(int& id);
-	bool AddOrderOfPatrons(int& id);
-	bool FindIdOfButton(int& id);
-	int FindIndexOfId(int& id) const;
-	std::vector<dataset> GetContainer() const;
-	wxArrayString GetSeafood() const;
-	wxArrayString GetMeat() const;
-	wxArrayString GetCombination() const;
+	void createButtons(wxWindow* panel);
+	void createListBox(wxWindow* panel);
+	bool hasPatrons(int& id);
+	bool hasOrders(int& id);
+	int findIndex(int& id) const;
+	std::vector<dataset> getContainer() const;
+	wxArrayString getSeafood() const;
+	wxArrayString getMeat() const;
+	wxArrayString getCombination() const;
 	Unique SwitchID(Unique& id);
-	void OnButtonClick(wxCommandEvent& evt);
-	void SwitchButtonClicked(wxCommandEvent& evt);
-	void UpdatePatronNumberOnClick(wxCommandEvent& evt);
-	void CreateOptionsOnClick(wxCommandEvent& evt);
-	void UpdateOrdersOnClick(wxCommandEvent& evt);
+	void onButtonClick(wxCommandEvent& evt);
+	void switchButtonClicked(wxCommandEvent& evt);
+	void updatePatronNumberOnClick(wxCommandEvent& evt);
+	void createOptionsOnClick(wxCommandEvent& evt);
+	void updateOrdersOnClick(wxCommandEvent& evt);
 
 private:
-	int num_of_patrons_ = 0;
+	int num_patrons_ = 0;
 	wxArrayString event_container_;
 	std::vector<dataset> container_;
 	wxArrayString seafood_ = { "Lobster", "Crab", "Seabass", "Tuna", "Scallops" };
