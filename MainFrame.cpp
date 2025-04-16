@@ -33,34 +33,30 @@ void MainFrame::CreateListBox(wxWindow* panel) {
 	//Unique id = Table1;
 	int id = 2;
 	int x = 150;
-	int y = 20;
+	int y = 50;
 	int index = 0;
 	for (int i = 0; i < 15; i++) {
 		index = FindIndexOfId(id);
+		new wxListBox(panel, id, wxPoint(x, y), wxSize(120, 100), {});
 
-		//temporary removal, crashes when AddNumberOfPatrons is activated on a table (wrong access of index in subscript)
-		/*
 		if (index != -1) {
 			if (container_[index].order_placed_ == true) {
-				new wxListBox(panel, id, wxPoint(x, y), wxSize(100, 150), container_[index].order_);
+				wxListBox* boxPtr = (wxListBox*)panel->GetChildren()[i];
+				boxPtr->InsertItems(container_[index].order_, 0);
 			}
 		}
-		else {
-			new wxListBox(panel, id, wxPoint(x, y), wxSize(100, 150), { "temporary", "text" });
-		}
-		*/
-		new wxListBox(panel, id, wxPoint(x, y), wxSize(100, 150), { "temporary", "text" });
+
 		panel->GetChildren()[i]->SetBackgroundColour(wxColor(0, 0, 200));
 		id++;
-		y += 200;
-		if (y == 1020) {
+		y += 140;
+		if (y == 750) {
 			x += 150;
-			y = 20;
+			y = 50;
 		}
 	}
 }
 
-//ON SWITCH, only AddNumberOfPatrons function makes same buttons with id in container white??
+
 void MainFrame::CreateButtons(wxWindow* panel) {
 	//Unique id = Table1;
 	int id = 2;
