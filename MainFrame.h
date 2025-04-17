@@ -1,7 +1,6 @@
 #pragma once
 #include <wx/wx.h>
 #include <string>
-#include <array>
 #include <wx/spinctrl.h>
 
 class MainFrame : public wxFrame { //mainframe inherits from wxFrame
