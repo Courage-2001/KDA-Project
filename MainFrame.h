@@ -2,6 +2,7 @@
 #include <wx/wx.h>
 #include <string>
 #include <wx/spinctrl.h>
+#include "Admin.h"
 
 class MainFrame : public wxFrame { //mainframe inherits from wxFrame
 public:
@@ -30,6 +31,7 @@ public:
 	Unique SwitchID(Unique& id);
 	void onButtonClick(wxCommandEvent& evt);
 	void switchButtonClicked(wxCommandEvent& evt);
+	void switchSettingClicked(wxCommandEvent& evt);
 	void updatePatronNumberOnClick(wxCommandEvent& evt);
 	void createOptionsOnClick(wxCommandEvent& evt);
 	void updateOrdersOnClick(wxCommandEvent& evt);
@@ -38,6 +40,7 @@ private:
 	int num_patrons_;
 	wxArrayString event_container_;
 	std::vector<dataset> container_;
+	wxFrame* frame_;
 	wxListBox* listbox_;
 	wxChoice* choice_;
 	wxSpinCtrl* spin_;
@@ -45,5 +48,6 @@ private:
 	wxArrayString seafood_;
 	wxArrayString meat_;
 	wxArrayString combination_;
+	bool hasLogin_;
 };
 

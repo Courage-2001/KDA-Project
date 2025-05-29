@@ -6,12 +6,10 @@
 
 class Admin : public wxFrame {
 public:
-	Admin(const wxString& title);
-	void setFlag();
-	bool getFlag() const;
+	Admin(const wxString& title, wxFrame* frame);
 	void loginButtonClicked(wxCommandEvent& evt);
 
 
 private:
-	bool flag_;
+	wxFrame* frame_;
 };
