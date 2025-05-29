@@ -19,6 +19,7 @@ public:
 	};
 
 	MainFrame(const wxString& title); //wxstring is str implementation of wxwidgets
+
 	void createButtons(wxWindow* panel);
 	void createListBox(wxWindow* panel);
 	bool hasPatrons(int& id);
