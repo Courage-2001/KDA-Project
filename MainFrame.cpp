@@ -4,22 +4,26 @@
 bool panelFlag = true;
 
 MainFrame::MainFrame(const wxString& title) : wxFrame(nullptr, wxID_ANY, title) {
+	SetClientSize(800, 600);
+	Center();
+	Show();
 	num_patrons_ = 0;
 	event_container_ = {};
 	container_ = {};
+	frame_ = this; //initialize frame_ to point to MainFrame to pass as a param into admin constructor
 	listbox_ = nullptr;
 	choice_ = nullptr;
 	spin_ = nullptr;
 	dialog_ = nullptr;
+	hasLogin_ = false;
 	seafood_ = { "Lobster", "Crab", "Seabass", "Tuna", "Scallops" };
 	meat_ = { "Steak", "Veal", "Chicken", "Lamb", "Porkchops" };
 	combination_ = { "Steak and Lobster", "Surf and Turf", "Chicken and Steak", "Shrimp over Linguini", "Steak with Shrimp" };
 
-	wxPanel* firstPanel = new wxPanel(this, wxID_ANY, wxPoint(0, 0), wxSize(800,800));
+	wxPanel* firstPanel = new wxPanel(this, wxID_ANY, wxPoint(0, 0), wxSize(800, 800));
 	wxPanel* secondPanel = new wxPanel(this, wxID_ANY, wxPoint(800, 0), wxSize(750, 800));
 	firstPanel->SetBackgroundColour(wxColor(0, 0, 200));
 	secondPanel->SetBackgroundColour(wxColor(0, 0, 200));
-
 
 	createButtons(firstPanel); //arg is wxWindows, but panel is accepted (because subclass of wxWindows maybe?)
 	CreateStatusBar();
@@ -27,6 +31,8 @@ MainFrame::MainFrame(const wxString& title) : wxFrame(nullptr, wxID_ANY, title) 
 	wxButton* switchScreenButton = new wxButton(secondPanel, wxID_ANY, "Switch Screens", wxPoint(500, 700), wxSize(100, 50));
 	switchScreenButton->Bind(wxEVT_BUTTON, &MainFrame::switchButtonClicked, this);
 
+	wxButton* settingsButton = new wxButton(secondPanel, wxID_ANY, "Settings", wxPoint(650, 700), wxSize(50, 50));
+	settingsButton->Bind(wxEVT_BUTTON, &MainFrame::switchSettingClicked, this);
 }
 
 /*
@@ -228,6 +234,16 @@ void MainFrame::switchButtonClicked(wxCommandEvent& evt) {
 		panelFlag = false;
 		wxLogStatus("Listboxes created");
 	}
+}
+
+
+/*
+	Event that hides the current frame (MainFrame) and creates the Admin frame, passing MainFrame's ptr to admin
+	to later be used to display MainFrame once the work in Admin is done. 
+*/
+void MainFrame::switchSettingClicked(wxCommandEvent& evt) {
+	Hide();
+	Admin* admin = new Admin("login", frame_);
 }
 
 /*
