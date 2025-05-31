@@ -11,5 +11,4 @@ public:
 
 private:
 	wxFrame* frame_;
-	wxTextCtrl* text_;
 };
