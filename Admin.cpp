@@ -53,8 +53,7 @@ bool Admin::searchUserAndPass(bool& user, bool& pass) {
 	user back to the original frame (MainFrame)
 
 	MISSING: 
-		- limiting what can be entered (like no whitespaces or illegal characters)
-		- Even with correct user and pass, program does not recognize and will not process the params
+		- limiting what can be entered (like illegal characters)
 */
 void Admin::loginButtonClicked(wxCommandEvent& evt) {
 	wxDialog* dialog = new wxDialog(this, wxID_ANY, "", wxPoint(500, 300), wxDefaultSize);

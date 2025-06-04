@@ -10,6 +10,7 @@ public:
 	bool searchUserAndPass(bool& user, bool& pass);
 
 
+
 private:
 	wxFrame* frame_;
 };
