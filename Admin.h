@@ -7,6 +7,7 @@ public:
 	Admin(const wxString& title, wxFrame* frame);
 	void loginButtonClicked(wxCommandEvent& evt);
 	void frameOnClose(wxCloseEvent& evt);
+	bool searchUserAndPass(bool& user, bool& pass);
 
 
 private:

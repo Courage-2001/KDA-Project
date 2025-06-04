@@ -21,6 +21,27 @@ Admin::Admin(const wxString& title, wxFrame* frame) : wxFrame(nullptr, wxID_ANY,
 
 }
 
+bool Admin::searchUserAndPass(bool& user, bool& pass) {
+	wxTextCtrl* userPtr = (wxTextCtrl*)this->FindWindowById(60); //points to the TextCtrl containing username input
+	wxTextCtrl* passPtr = (wxTextCtrl*)this->FindWindowById(61); //points to the TextCtrl containing password input
+
+	std::ifstream database;
+	database.open("Database.txt");
+	if (database.is_open()) {
+
+		std::string word = "";
+		char delimeter = ' '; //whitespace denotes end of word
+		while (std::getline(database, word, delimeter)) {
+			if (word != "Username:" || word != "Password:") {
+				if (word == userPtr->GetLineText(0)) user = true;
+				else if (word == passPtr->GetLineText(0)) pass = true;
+			}
+		}
+		return true;
+	}
+	return false;
+}
+
 /*
 	Event that will attempt to look if database exist, or create a new database with new username and password.
 	Uses two TextCtrl ptr's to point to the controls created in the construtor denoting the user and pass.
@@ -42,40 +63,21 @@ void Admin::loginButtonClicked(wxCommandEvent& evt) {
 
 	wxDialog* errorDialog = new wxDialog(this, wxID_ANY, "", wxPoint(500, 300), wxDefaultSize);
 	wxStaticText* errorText = new wxStaticText(errorDialog, wxID_ANY,
-		"Error: Username and Password do not match! Try again.", wxPoint(50, 50), wxDefaultSize);
+		"", wxPoint(50, 50), wxDefaultSize);
 
 	wxTextCtrl* username = (wxTextCtrl*)this->FindWindowById(60);
 	wxTextCtrl* password = (wxTextCtrl*)this->FindWindowById(61);
-	std::ifstream database;
-	database.open("Database.txt");
-	if (database.is_open()) {
-
-		std::string word = "";
-		char delimeter = ' ';
-		bool is_user = false;
-		bool is_pass = false;
-		while (std::getline(database, word, delimeter)) {
-			std::cout << word << std::endl;
-			if (word == username->GetLineText(0)) is_user = true;
-			else if (word == password->GetLineText(0)) is_pass = true;
-		}
-		if (is_user == true && is_pass == true) {
-			this->Destroy();
-			frame_->Show();
-			frame_ = nullptr;
-			username = nullptr;
-			password = nullptr;
-			wxLogStatus("Username and Password matches!");
-		}
-		else {
+	bool is_user = false;
+	bool is_pass = false;
+	if(searchUserAndPass(is_user, is_pass) == false) {
+		if (username->GetLineText(0) == "" || password->GetLineText(0) == "") {
+			errorText->SetLabel("There is a blank entry. \nPlease give a VALID entry for both fields to initialize database.");
 			errorDialog->ShowModal();
 		}
-	}
-	else {
-		if (dialog->ShowModal() != wxID_OK) {
+		else if (dialog->ShowModal() != wxID_OK) {
 			std::ofstream newDatabase("Database.txt");
-			newDatabase << "Username: " << username->GetLineText(0) 
-			<< " Password: " << password->GetLineText(0) << std::endl;
+			newDatabase << "Username: " << username->GetLineText(0)
+			<< " Password: " << password->GetLineText(0) << " " << std::endl;
 			newDatabase.close();
 
 			this->Destroy();
@@ -85,6 +87,26 @@ void Admin::loginButtonClicked(wxCommandEvent& evt) {
 			password = nullptr;
 			wxLogStatus("Database successfully created!");
 		}
+	}
+	else if (is_user == true && is_pass == true) {
+		this->Destroy();
+		frame_->Show();
+		frame_ = nullptr;
+		username = nullptr;
+		password = nullptr;
+		wxLogStatus("Username and Password matches!");
+	}
+	else if (is_user == true && is_pass == false) {
+		errorText->SetLabel("password is incorrect. Try again!");
+		errorDialog->ShowModal();
+	}
+	else if (is_user == false && is_pass == true) {
+		errorText->SetLabel("username is incorrect. Try again!");
+		errorDialog->ShowModal();
+	}
+	else if (is_user == false && is_pass == false) {
+		errorText->SetLabel("both username and password is incorrect. Try again!");
+		errorDialog->ShowModal();
 	}
 }
 
