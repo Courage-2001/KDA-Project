@@ -35,6 +35,8 @@ MainFrame::MainFrame(const wxString& title) : wxFrame(nullptr, wxID_ANY, title) 
 
 	wxButton* settingsButton = new wxButton(secondPanel, wxID_ANY, "Settings", wxPoint(650, 700), wxSize(50, 50));
 	settingsButton->Bind(wxEVT_BUTTON, &MainFrame::switchSettingClicked, this);
+
+	this->Bind(wxEVT_CLOSE_WINDOW, &MainFrame::mainframeOnClose, this); //binds event when closing the window
 }
 
 /*
@@ -205,6 +207,18 @@ std::vector<MainFrame::dataset> MainFrame::getContainer() const {
 	return container_;
 }
 
+std::vector<int> MainFrame::getSeafoodCount() const {
+	return seafood_[0].s_count;
+}
+
+std::vector<int> MainFrame::getMeatCount() const {
+	return meat_[0].s_count;
+}
+
+std::vector<int> MainFrame::getCombinationCount() const {
+	return combination_[0].s_count;
+}
+
 /*
 	Function that will update how many dishes have been ordered this session.
 	Uses two pointer of Choice and ListBox, and if neither points to nullptr, takes the value and uses it to begin searching
@@ -368,6 +382,13 @@ void MainFrame::updateOrdersOnClick(wxCommandEvent& evt) {
 		delete dialog_;
 		dialog_ = nullptr;
 	}
+}
+
+void MainFrame::mainframeOnClose(wxCloseEvent& evt) {
+	Admin* admin = new Admin("", frame_);
+	admin->Hide();
+	admin->setDataIntoDatabase(getSeafoodCount(), getMeatCount(), getCombinationCount());
+	this->Destroy(); //again bad use(unsure why Close() doesn't work), but closes window completely
 }
 
 //not being used, may delete eventually

@@ -17,7 +17,7 @@ Admin::Admin(const wxString& title, wxFrame* frame) : wxFrame(nullptr, wxID_ANY,
 	wxTextCtrl* passwordInput = new wxTextCtrl(loginPanel, 61, "", wxPoint(300, 200), wxSize(200, 25));
 	wxButton* loginButton = new wxButton(loginPanel, wxID_ANY, "Login", wxPoint(500, 300), wxSize(100, 50));
 	loginButton->Bind(wxEVT_BUTTON, &Admin::loginButtonClicked, this);
-	this->Bind(wxEVT_CLOSE_WINDOW, &Admin::frameOnClose, this);
+	this->Bind(wxEVT_CLOSE_WINDOW, &Admin::adminFrameOnClose, this);
 
 }
 
@@ -37,9 +37,117 @@ bool Admin::searchUserAndPass(bool& user, bool& pass) {
 				else if (word == passPtr->GetLineText(0)) pass = true;
 			}
 		}
+		database.close();
 		return true;
 	}
 	return false;
+}
+
+/*
+	Function that will destroy all children in the Admin frame, then takes data from the database and inputs it into
+	the corresponding mxn matrix row. 
+	The relevant controls will be created and will show how many times a dishes has been ordered this session to the user onto the
+	panel.
+*/
+void Admin::displayDataFromDatabase() {
+	this->GetChildren()[0]->DestroyChildren(); //panel destroys all children
+	std::vector<std::vector< std::string>> number_of_dishes = { {"", "", "", "", ""}, //represents seafood
+																{"", "", "", "", ""}, //represents meat
+																{"", "", "", "", ""} }; //represents combination
+}
+
+void Admin::setDataIntoDatabase(const std::vector<int>& seafood_count, const std::vector<int>& meat_count, const std::vector<int>& combination_count) {
+	std::vector<std::string> database = {}; //highly ineffcient but the method will work for now
+	std::ifstream database_copy;
+	database_copy.open("Database.txt");
+	if (database_copy.is_open()) {
+		std::string line = "";
+		while (std::getline(database_copy, line)) {
+			database.push_back(line);
+		}
+		database_copy.close();
+	}
+	//represents the new data to be inserted in the database (either overwriting or new)
+	std::vector<std::string> data = updateDataOfDishes(database, seafood_count, meat_count, combination_count);
+	if(database.size() == 3) database.pop_back(); //removes the last line that will be overwritten (if exist)
+
+	std::ofstream overwrite_database("Database.txt");
+	if (overwrite_database.is_open()) {
+		for (auto it = database.begin(); it != database.end(); ++it) {
+			overwrite_database << *it << std::endl;
+		}
+		for (auto it = data.begin(); it != data.end(); ++it) {
+			overwrite_database << *it << " ";
+		}
+		overwrite_database << std::endl;
+		overwrite_database.close();
+	}
+	this->Destroy(); //since we invoked the constructor in MainFrame, we destroy (at least i think for mem safety)
+}
+
+/*
+	Function that will take all count of dishes ordered in MainFrame, and returns a vector with either
+	overwritten or new data to set the database with.
+	Absolutely horrendous parameters, but will do for now.
+
+	REMOVE THIS SENTENCE LATER: there is an error, i suspect it is updateCountOfDishes event in MainFrame, otherwise
+	this should work as intended?
+*/
+std::vector<std::string> Admin::updateDataOfDishes(const std::vector<std::string>& database, const std::vector<int>& seafood_count, const std::vector<int>& meat_count, const std::vector<int>& combination_count) {
+	std::vector<std::string> num_of_dishes = {};
+	int index = 0;
+	//need to change names of it2, it3, it4 to something more clearer
+	auto it2 = seafood_count.begin();
+	auto it3 = meat_count.begin();
+	auto it4 = combination_count.begin();
+	if (database.size() == 3) {
+		//gets the string from database[2] (line 3), parses it and only appends strings of length 1 to num_of_dishes not including ' '
+		for (auto it = database[2].begin(); it != database[2].end(); ++it) {
+			if (*it != ' ') {
+				num_of_dishes.push_back(std::to_string(*it));
+			}
+		}
+
+		for (auto it = num_of_dishes.begin(); it != num_of_dishes.end(); ++it) {
+			int num = 0;
+			if (index < 5) {
+				num = std::stoi(*it) - '0' + *it2; //current index of data (we do - '0' to remove char value and return the int) + current index of seafood (str to int)
+				*it = std::to_string(num); //iterator of data now points to new value added from num (returns back to string)
+				++it2;
+			}
+			else if (index > 4 && index < 10) {
+				num = std::stoi(*it) - '0' + *it3;
+				*it = std::to_string(num);
+				++it3;
+			}
+			else if (index > 9 && index < 15) {
+				num = std::stoi(*it) - '0' + *it4;
+				*it = std::to_string(num);
+				++it4;
+			}
+			index++;
+		}
+		return num_of_dishes;
+	}	
+	else if (database.size() == 2) {
+		while (index < 15) {
+			if (index < 5) {
+				num_of_dishes.push_back(std::to_string(*it2));
+				++it2;
+			}
+			else if (index > 4 && index < 10) {
+				num_of_dishes.push_back(std::to_string(*it3));
+				++it3;
+			}
+			else if (index > 9 && index < 15) {
+				num_of_dishes.push_back(std::to_string(*it4));
+				++it4;
+			}
+			index++;
+		}
+		return num_of_dishes;
+	}
+	return {}; //empty only if no condition matches
 }
 
 /*
@@ -77,6 +185,9 @@ void Admin::loginButtonClicked(wxCommandEvent& evt) {
 			std::ofstream newDatabase("Database.txt");
 			newDatabase << "Username: " << username->GetLineText(0)
 			<< " Password: " << password->GetLineText(0) << " " << std::endl;
+			newDatabase << "Lobster Crab Seabass Tuna Scallops "
+				<< "Steak Veal Chicken Lamb Porkchops "
+				<< "SteakandLobster SurfandTurf ChickenandSteak ShrimpoverLinguini SteakwithShrimp " << std::endl;
 			newDatabase.close();
 
 			this->Destroy();
@@ -109,7 +220,7 @@ void Admin::loginButtonClicked(wxCommandEvent& evt) {
 	}
 }
 
-void Admin::frameOnClose(wxCloseEvent& evt) {
+void Admin::adminFrameOnClose(wxCloseEvent& evt) {
 	this->Destroy(); //bad use, but it works. unsure why Close() does not work
 	frame_->Show();
 	frame_ = nullptr;
