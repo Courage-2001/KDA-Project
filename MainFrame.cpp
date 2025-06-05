@@ -229,9 +229,9 @@ std::vector<int> MainFrame::getCombinationCount() const {
 void MainFrame::updateCountOfDishes() {
 	int choiceId = 40;
 	int listId = 45;
-	choice_ = (wxChoice*)this->FindWindowById(choiceId);
-	listbox_ = (wxListBox*)this->FindWindowById(listId);
 	for (int i = 0; i < num_patrons_; i++) {
+		choice_ = (wxChoice*)this->FindWindowById(choiceId);
+		listbox_ = (wxListBox*)this->FindWindowById(listId);
 		int index = 0;
 		if (choice_ != nullptr) {
 			if (choice_->GetSelection() == 0) {
@@ -387,8 +387,14 @@ void MainFrame::updateOrdersOnClick(wxCommandEvent& evt) {
 void MainFrame::mainframeOnClose(wxCloseEvent& evt) {
 	Admin* admin = new Admin("", frame_);
 	admin->Hide();
-	admin->setDataIntoDatabase(getSeafoodCount(), getMeatCount(), getCombinationCount());
-	this->Destroy(); //again bad use(unsure why Close() doesn't work), but closes window completely
+	if (admin->hasDatabase()) {
+		admin->setDataIntoDatabase(getSeafoodCount(), getMeatCount(), getCombinationCount());
+		this->Destroy(); //again bad use(unsure why Close() doesn't work), but closes window completely
+	}
+	else {
+		admin->Destroy();
+		this->Destroy();
+	}
 }
 
 //not being used, may delete eventually

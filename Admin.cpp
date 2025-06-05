@@ -43,6 +43,13 @@ bool Admin::searchUserAndPass(bool& user, bool& pass) {
 	return false;
 }
 
+bool Admin::hasDatabase() {
+	std::ifstream test_database;
+	test_database.open("Database.txt");
+	if (test_database.is_open()) return true;
+	return false;
+}
+
 /*
 	Function that will destroy all children in the Admin frame, then takes data from the database and inputs it into
 	the corresponding mxn matrix row. 
