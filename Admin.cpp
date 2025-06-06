@@ -52,15 +52,40 @@ bool Admin::hasDatabase() {
 
 /*
 	Function that will destroy all children in the Admin frame, then takes data from the database and inputs it into
-	the corresponding mxn matrix row. 
+	num_data, where it will retrieve the values later on. 
 	The relevant controls will be created and will show how many times a dishes has been ordered this session to the user onto the
 	panel.
+	Error(remove later): current database has 1, 1, 1, 1, 1 for first 5 digits but only shows 4 1's. On top of that, 
+	"Stk with Sh" is missing a number associated with the dish. 
 */
 void Admin::displayDataFromDatabase() {
 	this->GetChildren()[0]->DestroyChildren(); //panel destroys all children
-	std::vector<std::vector< std::string>> number_of_dishes = { {"", "", "", "", ""}, //represents seafood
-																{"", "", "", "", ""}, //represents meat
-																{"", "", "", "", ""} }; //represents combination
+	std::vector<std::string> num_data = {};
+	std::vector<std::string> name_data = {"Lobster", "Crab", "Seabass", "Tuna", "Scallops",
+											"Steak", "Veal", "Chicken", "Lamb", "Porkchops",
+											"Stk & Lx", "Surf & Turf", "Ch & Stk", "Sh over Ling", "Stk with Sh" };
+	std::ifstream database("Database.txt");
+	std::string num = "";
+	char delimeter = ' ';
+	while (std::getline(database, num, delimeter)) {
+		if (num.length() == 1) num_data.push_back(num);
+	}
+	
+	//creates the necessary controls to display data (15 data params to show)
+	wxPanel* panel = (wxPanel*)this->GetChildren()[0]; //takes the panel from Admin frame to use in creation of controls
+	int x = 150;
+	int y = 50;
+	for (int i = 0; i < 15; i++) {
+		std::string dish_name = name_data[i] + " ordered: ";
+		new wxStaticText(panel, wxID_ANY, dish_name, wxPoint(x, y), wxSize(120, 50));
+		new wxTextCtrl(panel, wxID_ANY, num_data[i], wxPoint(x + 200, y), wxSize(60, 50)); //change back to StaticText later
+
+		y += 100;
+		if (y == 750) {
+			x += 350;
+			y = 50;
+		}
+	}
 }
 
 void Admin::setDataIntoDatabase(const std::vector<int>& seafood_count, const std::vector<int>& meat_count, const std::vector<int>& combination_count) {
@@ -96,9 +121,6 @@ void Admin::setDataIntoDatabase(const std::vector<int>& seafood_count, const std
 	Function that will take all count of dishes ordered in MainFrame, and returns a vector with either
 	overwritten or new data to set the database with.
 	Absolutely horrendous parameters, but will do for now.
-
-	REMOVE THIS SENTENCE LATER: there is an error, i suspect it is updateCountOfDishes event in MainFrame, otherwise
-	this should work as intended?
 */
 std::vector<std::string> Admin::updateDataOfDishes(const std::vector<std::string>& database, const std::vector<int>& seafood_count, const std::vector<int>& meat_count, const std::vector<int>& combination_count) {
 	std::vector<std::string> num_of_dishes = {};
@@ -206,12 +228,11 @@ void Admin::loginButtonClicked(wxCommandEvent& evt) {
 		}
 	}
 	else if (is_user == true && is_pass == true) {
-		this->Destroy();
-		frame_->Show();
-		frame_ = nullptr;
+		this->GetChildren()[0]->DestroyChildren(); //panel remains, but all children of panel is gone
+		displayDataFromDatabase();
 		username = nullptr;
 		password = nullptr;
-		wxLogStatus("Username and Password matches!");
+		wxLogStatus("displayDataFromDatabase() worked! user and pass matched");
 	}
 	else if (is_user == true && is_pass == false) {
 		errorText->SetLabel("password is incorrect. Try again!");
