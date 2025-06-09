@@ -46,7 +46,10 @@ bool Admin::searchUserAndPass(bool& user, bool& pass) {
 bool Admin::hasDatabase() {
 	std::ifstream test_database;
 	test_database.open("Database.txt");
-	if (test_database.is_open()) return true;
+	if (test_database.is_open()) {
+		test_database.close();
+		return true;
+	}
 	return false;
 }
 
@@ -76,16 +79,16 @@ void Admin::displayDataFromDatabase() {
 	
 	//creates the necessary controls to display data (15 data params to show)
 	wxPanel* panel = (wxPanel*)this->GetChildren()[0]; //takes the panel from Admin frame to use in creation of controls
-	int x = 150;
+	int x = 50;
 	int y = 50;
 	for (int i = 0; i < 15; i++) {
 		std::string dish_name = name_data[i] + " ordered: ";
 		new wxStaticText(panel, wxID_ANY, dish_name, wxPoint(x, y), wxSize(120, 50));
-		new wxTextCtrl(panel, wxID_ANY, num_data[i], wxPoint(x + 200, y), wxSize(60, 50)); //change back to StaticText later
+		new wxStaticText(panel, wxID_ANY, num_data[i], wxPoint(x + 120, y), wxSize(25, 25));
 
-		y += 100;
-		if (y == 750) {
-			x += 350;
+		y += 50;
+		if (y == 400) {
+			x += 150;
 			y = 50;
 		}
 	}
