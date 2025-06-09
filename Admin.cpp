@@ -55,20 +55,23 @@ bool Admin::hasDatabase() {
 	num_data, where it will retrieve the values later on. 
 	The relevant controls will be created and will show how many times a dishes has been ordered this session to the user onto the
 	panel.
-	Error(remove later): current database has 1, 1, 1, 1, 1 for first 5 digits but only shows 4 1's. On top of that, 
-	"Stk with Sh" is missing a number associated with the dish. 
 */
 void Admin::displayDataFromDatabase() {
 	this->GetChildren()[0]->DestroyChildren(); //panel destroys all children
-	std::vector<std::string> num_data = {};
+	std::vector<char> num_data = {};
 	std::vector<std::string> name_data = {"Lobster", "Crab", "Seabass", "Tuna", "Scallops",
 											"Steak", "Veal", "Chicken", "Lamb", "Porkchops",
 											"Stk & Lx", "Surf & Turf", "Ch & Stk", "Sh over Ling", "Stk with Sh" };
 	std::ifstream database("Database.txt");
 	std::string num = "";
-	char delimeter = ' ';
-	while (std::getline(database, num, delimeter)) {
-		if (num.length() == 1) num_data.push_back(num);
+	int line = 1;
+	while (std::getline(database, num)) {
+		if (line == 3) {
+			for (auto it = num.begin(); it != num.end(); ++it) {
+				if (*it != ' ') num_data.push_back(*it); //pushback all valid inputs in line 3 of database (not including ' ')
+			}
+		}
+		line++;
 	}
 	
 	//creates the necessary controls to display data (15 data params to show)
