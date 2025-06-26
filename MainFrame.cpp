@@ -8,7 +8,7 @@ MainFrame::MainFrame(const wxString& title) : wxFrame(nullptr, wxID_ANY, title) 
 	Center();
 	Show();
 	num_patrons_ = 0;
-	event_container_ = {};
+	event_container_ = {}; //really need to change name to understand what the purpose of this var does
 	container_ = {};
 	frame_ = this; //initialize frame_ to point to MainFrame to pass as a param into admin constructor
 	listbox_ = nullptr;
@@ -16,9 +16,11 @@ MainFrame::MainFrame(const wxString& title) : wxFrame(nullptr, wxID_ANY, title) 
 	spin_ = nullptr;
 	dialog_ = nullptr;
 	hasLogin_ = false;
-	seafood_ = { "Lobster", "Crab", "Seabass", "Tuna", "Scallops" };
-	meat_ = { "Steak", "Veal", "Chicken", "Lamb", "Porkchops" };
-	combination_ = { "Steak and Lobster", "Surf and Turf", "Chicken and Steak", "Shrimp over Linguini", "Steak with Shrimp" };
+	seafood_ = { {{"Lobster", "Crab", "Seabass", "Tuna", "Scallops"}, {0, 0, 0, 0, 0}} };
+	meat_ = { {{"Steak", "Veal", "Chicken", "Lamb", "Porkchops"}, {0, 0, 0, 0, 0}} };
+	combination_ = { {{"Steak and Lobster", "Surf and Turf", "Chicken and Steak", "Shrimp over Linguini", "Steak with Shrimp"},
+						{0, 0, 0, 0, 0}} };
+
 
 	wxPanel* firstPanel = new wxPanel(this, wxID_ANY, wxPoint(0, 0), wxSize(800, 800));
 	wxPanel* secondPanel = new wxPanel(this, wxID_ANY, wxPoint(800, 0), wxSize(750, 800));
@@ -33,6 +35,8 @@ MainFrame::MainFrame(const wxString& title) : wxFrame(nullptr, wxID_ANY, title) 
 
 	wxButton* settingsButton = new wxButton(secondPanel, wxID_ANY, "Settings", wxPoint(650, 700), wxSize(50, 50));
 	settingsButton->Bind(wxEVT_BUTTON, &MainFrame::switchSettingClicked, this);
+
+	this->Bind(wxEVT_CLOSE_WINDOW, &MainFrame::mainframeOnClose, this); //binds event when closing the window
 }
 
 /*
@@ -189,6 +193,7 @@ bool MainFrame::hasOrders(int& id) {
 	return true;
 }
 
+//need to change name for more clarity
 int MainFrame::findIndex(int& id) const {
 	int i = 0;
 	for (auto it = container_.begin(); it != container_.end(); ++it) {
@@ -202,18 +207,62 @@ std::vector<MainFrame::dataset> MainFrame::getContainer() const {
 	return container_;
 }
 
-wxArrayString MainFrame::getSeafood() const {
-	return seafood_;
+std::vector<int> MainFrame::getSeafoodCount() const {
+	return seafood_[0].s_count;
 }
 
-wxArrayString MainFrame::getMeat() const {
-	return meat_;
+std::vector<int> MainFrame::getMeatCount() const {
+	return meat_[0].s_count;
 }
 
-wxArrayString MainFrame::getCombination() const {
-	return combination_;
+std::vector<int> MainFrame::getCombinationCount() const {
+	return combination_[0].s_count;
 }
 
+/*
+	Function that will update how many dishes have been ordered this session.
+	Uses two pointer of Choice and ListBox, and if neither points to nullptr, takes the value and uses it to begin searching
+	through the different struct vectors and updates the corresponding index to the dish
+
+	I.E. if Salmon is at index 0, and a customer orders Salmon, then we update/increment s_count of seafood_ at index 0 by 1
+*/
+void MainFrame::updateCountOfDishes() {
+	int choiceId = 40;
+	int listId = 45;
+	for (int i = 0; i < num_patrons_; i++) {
+		choice_ = (wxChoice*)this->FindWindowById(choiceId);
+		listbox_ = (wxListBox*)this->FindWindowById(listId);
+		int index = 0;
+		if (choice_ != nullptr) {
+			if (choice_->GetSelection() == 0) {
+				for (auto it = seafood_[0].s_array.begin(); it != seafood_[0].s_array.end(); ++it) {
+					if(listbox_ != nullptr)
+						if (*it == listbox_->GetStringSelection()) break;
+					index++;
+				}
+				seafood_[0].s_count[index] = seafood_[0].s_count[index] + 1;
+			}
+			if (choice_->GetSelection() == 1) {
+				for (auto it = meat_[0].s_array.begin(); it != meat_[0].s_array.end(); ++it) {
+					if (listbox_ != nullptr)
+						if (*it == listbox_->GetStringSelection()) break;
+					index++;
+				}
+				meat_[0].s_count[index] = meat_[0].s_count[index] + 1;
+			}
+			if (choice_->GetSelection() == 2) {
+				for (auto it = combination_[0].s_array.begin(); it != combination_[0].s_array.end(); ++it) {
+					if (listbox_ != nullptr)
+						if (*it == listbox_->GetStringSelection()) break;
+					index++;
+				}
+				combination_[0].s_count[index] = combination_[0].s_count[index] + 1;
+			}
+		}
+		choiceId++;
+		listId++;
+	}
+}
 
 /*
 	Uses global flag to determine which function to use on button click.
@@ -293,15 +342,15 @@ void MainFrame::createOptionsOnClick(wxCommandEvent& evt) {
 
 	if (choice_->GetSelection() == 0) {
 		if(this->FindWindowById(tempId) != NULL) this->FindWindowById(tempId)->Destroy();
-		listbox_ = new wxListBox(dialog_, tempId, wxPoint(choice_->GetPosition().x, 150), wxDefaultSize, getSeafood());
+		listbox_ = new wxListBox(dialog_, tempId, wxPoint(choice_->GetPosition().x, 150), wxDefaultSize, seafood_[0].s_array);
 	}
 	else if (choice_->GetSelection() == 1) {
 		if (this->FindWindowById(tempId) != NULL) this->FindWindowById(tempId)->Destroy();
-		listbox_ = new wxListBox(dialog_, tempId, wxPoint(choice_->GetPosition().x, 150), wxDefaultSize, getMeat());
+		listbox_ = new wxListBox(dialog_, tempId, wxPoint(choice_->GetPosition().x, 150), wxDefaultSize, meat_[0].s_array);
 	}
 	else if (choice_->GetSelection() == 2) {
 		if (this->FindWindowById(tempId) != NULL) this->FindWindowById(tempId)->Destroy();
-		listbox_ = new wxListBox(dialog_, tempId, wxPoint(choice_->GetPosition().x, 150), wxDefaultSize, getCombination());
+		listbox_ = new wxListBox(dialog_, tempId, wxPoint(choice_->GetPosition().x, 150), wxDefaultSize, combination_[0].s_array);
 	}
 }
 
@@ -317,8 +366,9 @@ void MainFrame::updateOrdersOnClick(wxCommandEvent& evt) {
 	for (int i = 0; i < num_patrons_; i++) {
 		listbox_ = (wxListBox*)this->FindWindowById(tempID);
 		if (listbox_ == nullptr) break;
-		else if(listbox_->GetStringSelection() != "") //BUG: if no choice is selected, and you press confirm, error thrown (RESOLVED)
+		else if (listbox_->GetStringSelection() != "") {//BUG: if no choice is selected, and you press confirm, error thrown (RESOLVED)
 			event_container_.Add(listbox_->GetStringSelection());
+		}
 		tempID++;
 	}
 
@@ -327,9 +377,23 @@ void MainFrame::updateOrdersOnClick(wxCommandEvent& evt) {
 		event_container_.clear();
 	}
 	else if(event_container_.size() ==  num_patrons_) {
+		updateCountOfDishes(); //updates the number of times a dishes has been ordered this session
 		dialog_->EndModal(0);
 		delete dialog_;
 		dialog_ = nullptr;
+	}
+}
+
+void MainFrame::mainframeOnClose(wxCloseEvent& evt) {
+	Admin* admin = new Admin("", frame_);
+	admin->Hide();
+	if (admin->hasDatabase()) {
+		admin->setDataIntoDatabase(getSeafoodCount(), getMeatCount(), getCombinationCount());
+		this->Destroy(); //again bad use(unsure why Close() doesn't work), but closes window completely
+	}
+	else {
+		admin->Destroy();
+		this->Destroy();
 	}
 }
 
