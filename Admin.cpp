@@ -21,6 +21,10 @@ Admin::Admin(const wxString& title, wxFrame* frame) : wxFrame(nullptr, wxID_ANY,
 
 }
 
+/*
+	Function that will search the database(text file) to match the input of what the user wrote for user and password.
+	Return true if function completes searching database, false if unable to open database file at all
+*/
 bool Admin::searchUserAndPass(bool& user, bool& pass) {
 	wxTextCtrl* userPtr = (wxTextCtrl*)this->FindWindowById(60); //points to the TextCtrl containing username input
 	wxTextCtrl* passPtr = (wxTextCtrl*)this->FindWindowById(61); //points to the TextCtrl containing password input
@@ -94,6 +98,11 @@ void Admin::displayDataFromDatabase() {
 	}
 }
 
+/*
+	Function that is called in MainFrame.cpp on window close, where we take the vectors of dishes count, and update the amount 
+	of order that have taken place in the database (text file). Takes into account whether or not it is user's first time updating
+	the database or updating existing database with new values to be added to existing entries. 
+*/
 void Admin::setDataIntoDatabase(const std::vector<int>& seafood_count, const std::vector<int>& meat_count, const std::vector<int>& combination_count) {
 	std::vector<std::string> database = {}; //highly ineffcient but the method will work for now
 	std::ifstream database_copy;
