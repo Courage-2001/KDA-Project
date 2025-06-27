@@ -1,8 +1,8 @@
 #include "Admin.h"
 
 /*
-	- Intiliazes frame_ to point to MainFrame's frame
-	- Creates all the necessary components for the GUI, and binds events to certain actions
+	Intiliazes frame_ to point to MainFrame's frame
+	Creates all the necessary components for the GUI, and binds events to certain actions
 */
 Admin::Admin(const wxString& title, wxFrame* frame) : wxFrame(nullptr, wxID_ANY, title) {
 	SetClientSize(800, 600);
@@ -23,7 +23,7 @@ Admin::Admin(const wxString& title, wxFrame* frame) : wxFrame(nullptr, wxID_ANY,
 
 /*
 	Function that will search the database(text file) to match the input of what the user wrote for user and password.
-	Return true if function completes searching database, false if unable to open database file at all
+	Return true if function completes searching database, false if unable to open database file at all (meaning 
 */
 bool Admin::searchUserAndPass(bool& user, bool& pass) {
 	wxTextCtrl* userPtr = (wxTextCtrl*)this->FindWindowById(60); //points to the TextCtrl containing username input
@@ -32,13 +32,12 @@ bool Admin::searchUserAndPass(bool& user, bool& pass) {
 	std::ifstream database;
 	database.open("Database.txt");
 	if (database.is_open()) {
-
 		std::string word = "";
-		char delimeter = ' '; //whitespace denotes end of word
-		while (std::getline(database, word, delimeter)) {
+		while (std::getline(database, word, ' ')) { // whitespace denotes end of word
 			if (word != "Username:" || word != "Password:") {
 				if (word == userPtr->GetLineText(0)) user = true;
 				else if (word == passPtr->GetLineText(0)) pass = true;
+				else if (word == "Lobster") break; // ends search of file once it reaches first word of second line
 			}
 		}
 		database.close();
