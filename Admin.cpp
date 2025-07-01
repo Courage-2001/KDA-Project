@@ -33,11 +33,11 @@ bool Admin::searchUserAndPass(bool& user, bool& pass) {
 	database.open("Database.txt");
 	if (database.is_open()) {
 		std::string word = "";
-		while (std::getline(database, word, ' ')) { // whitespace denotes end of word
+		while (std::getline(database, word, ' ')) {
 			if (word != "Username:" || word != "Password:") {
 				if (word == userPtr->GetLineText(0)) user = true;
 				else if (word == passPtr->GetLineText(0)) pass = true;
-				else if (word == "Lobster") break; // ends search of file once it reaches first word of second line
+				else if (word == "Lobster") break; // ends search of file
 			}
 		}
 		database.close();
@@ -62,9 +62,8 @@ bool Admin::hasDatabase() {
 	The relevant controls will be created and will show how many times a dishes has been ordered this session to the user onto the
 	panel.
 */
-	// currently broken (throwing vector subscript out of bounds error)
 void Admin::displayDataFromDatabase() {
-	this->GetChildren()[0]->DestroyChildren(); //panel destroys all children
+	this->GetChildren()[0]->DestroyChildren(); // panel destroys all children
 	std::vector<std::string> num_data = {};
 	std::vector<std::string> name_data = {"Lobster", "Crab", "Seabass", "Tuna", "Scallops",
 											"Steak", "Veal", "Chicken", "Lamb", "Porkchops",
@@ -76,12 +75,12 @@ void Admin::displayDataFromDatabase() {
 	while (std::getline(database, num)) {
 		if (line == 3) {
 			for (auto it = num.begin(); it != num.end(); ++it) {
-				if (*it == ' ' && num.substr(it - num.begin() - 2, size).length() >= 2) {
-					num_data.push_back(num.substr(it - num.begin() - 2, size)); //pushback all valid inputs in line 3 of database (not including ' ')
+				if (*it == ' ' && num.substr(it - num.begin() - size, size).length() >= 2) {
+					num_data.push_back(num.substr(it - num.begin() - size, size)); //pushback all valid inputs in line 3 of database (not including ' ')
 					size = 0;
 				}
-				else if (*it == ' ' && num.substr(it - num.begin() - 1, size).length() == 1) {
-					num_data.push_back(num.substr(it - num.begin() - 1, size));
+				else if (*it == ' ' && num.substr(it - num.begin() - size, size).length() == 1) {
+					num_data.push_back(num.substr(it - num.begin() - size, size));
 					size = 0;
 				}
 				size++;
@@ -90,21 +89,90 @@ void Admin::displayDataFromDatabase() {
 		line++;
 	}
 	
-	//creates the necessary controls to display data (15 data params to show)
+	// creates the necessary controls to display data (15 data params to show)
 	wxPanel* panel = (wxPanel*)this->GetChildren()[0]; //takes the panel from Admin frame to use in creation of controls
 	int x = 50;
 	int y = 50;
 	for (int i = 0; i < 15; i++) {
-		std::string dish_name = name_data[i] + " ordered: ";
-		new wxStaticText(panel, wxID_ANY, dish_name, wxPoint(x, y), wxSize(120, 50));
-		new wxStaticText(panel, wxID_ANY, num_data[i], wxPoint(x + 120, y), wxSize(25, 25));
+		std::string dish_data = name_data[i] + " ordered: " + num_data[i];
+		new wxStaticText(panel, wxID_ANY, dish_data, wxPoint(x, y), wxSize(180, 35));
 
 		y += 50;
 		if (y == 400) {
-			x += 150;
+			x += 200;
 			y = 50;
 		}
 	}
+}
+
+/*
+	Function that will update line 3 of database if it exist, or initialize line 3 for the first time and return a string
+	that will be used in overwriting Database.txt.
+	If line 3 exist of database, it will perform the appropriate math based on the length of string. For length 2 and greater, 
+	the entry gets updated as normal. For strings of length 1, the value stored in *it is converted to ASCII with std::stoi, 
+	so we subtract by '0' to retrieve the original integer value and perform the math as normal from there. 
+*/
+std::string Admin::updateDataOfDishes(const std::string& line, const std::vector<int>& seafood_count, const std::vector<int>& meat_count, const std::vector<int>& combination_count) {
+	std::string data = "";
+	int size = 0;
+	auto seafood = seafood_count.begin();
+	auto meat = meat_count.begin();
+	auto combination = combination_count.begin();
+	if (line != "") {
+		for (auto it = line.begin(); it != line.end(); ++it) {
+			int num = 0;
+			if (*it == ' ') {
+				if (seafood != seafood_count.end()) {
+					if (line.substr(it - line.begin() - size, size).length() >= 2) {
+						num = std::stoi(line.substr(it - line.begin() - size, size)) + *seafood;
+					}
+					else {
+						num = std::stoi(line.substr(it - line.begin() - size, size)) - '0' + *seafood;
+					}
+					++seafood;
+				}
+				else if (meat != meat_count.end()) {
+					if (line.substr(it - line.begin() - size, size).length() >= 2) {
+						num = std::stoi(line.substr(it - line.begin() - size, size)) + *meat;
+					}
+					else {
+						num = std::stoi(line.substr(it - line.begin() - size, size)) - '0' + *meat;
+					}
+					++meat;
+				}
+				else if (combination != combination_count.end()) {
+					if (line.substr(it - line.begin() - size, size).length() >= 2) {
+						num = std::stoi(line.substr(it - line.begin() - size, size)) + *combination;
+					}
+					else {
+						num = std::stoi(line.substr(it - line.begin() - size, size)) - '0' + *combination;
+					}
+					++combination;
+				}
+				data += std::to_string(num) + " ";
+				size = 0;
+			}
+			size++;
+		}
+		return data;
+	}
+	// initial database initialization
+	else if (line == "") {
+		while (seafood != seafood_count.end()) {
+			data += std::to_string(*seafood) + " ";
+			++seafood;
+		}
+		while (meat != seafood_count.end()) {
+			data += std::to_string(*meat) + " ";
+			++meat;
+		}
+		while (combination != seafood_count.end()) {
+			data += std::to_string(*combination) + " ";
+			++combination;
+		}
+		return data;
+	}
+	return "";
 }
 
 /*
@@ -123,7 +191,7 @@ void Admin::setDataIntoDatabase(const std::vector<int>& seafood_count, const std
 		}
 		database_copy.close();
 	}
-	// represents the new data to be inserted in the database (either overwriting or new)
+	// represents the new data to be inserted in the database (either overwriting or initialization)
 	std::string data = "";
 	if (database.size() == 3) {
 		data = updateDataOfDishes(database[2], seafood_count, meat_count, combination_count);
@@ -143,87 +211,6 @@ void Admin::setDataIntoDatabase(const std::vector<int>& seafood_count, const std
 		overwrite_database.close();
 	}
 	this->Destroy(); //since we invoked the constructor in MainFrame, we destroy (at least i think for mem safety)
-}
-
-/*
-	Function that will take all count of dishes ordered in MainFrame, and returns a vector with either
-	overwritten or new data to set the database with.
-	Absolutely horrendous parameters, but will do for now.
-*/
-	// needs new comments to reflect updated function (also doesn't work for length 3 or greater)
-std::string Admin::updateDataOfDishes(const std::string& line, const std::vector<int>& seafood_count, const std::vector<int>& meat_count, const std::vector<int>& combination_count) {
-	std::string data = ""; // represents third line of database (text file) that will overwrite existing data
-	int size = 0; // need to find alternative solution
-	auto it2 = seafood_count.begin(); 	// need to change names of it2, it3, it4 to something more clearer
-	auto it3 = meat_count.begin();
-	auto it4 = combination_count.begin();
-	// when it comes to updating the values from the database (line 3 of text file), we iterate in order where we
-	// change *it to an integer and subtract it by '0' (stoi converts char to ASCII value, so we return it back to 
-	// integer value, then we add that value by the value pointed by the corresponding container iterator
-	// and update the current value being pointed to by the data iterator with the new entry
-	if (line != "") {
-		for (auto it = line.begin(); it != line.end(); ++it) {
-			int num = 0;
-			if (*it == ' ' && line.substr(it - line.begin() - 2, size).length() >= 2) {
-				if (it2 != seafood_count.end()) {
-					num = std::stoi(line.substr(it - line.begin() - 2, size)) + *it2;
-					++it2;
-				}
-				else if (it3 != meat_count.end()) {
-					num = std::stoi(line.substr(it - line.begin() - 2, size)) + *it3;
-					++it3;
-				}
-				else if (it4 != combination_count.end()) {
-					num = std::stoi(line.substr(it - line.begin() - 2, size)) + *it4;
-					++it4;
-				}
-				data += std::to_string(num) + " ";
-				size = 0;
-			}
-			else if (*it == ' ' && line.substr(it - line.begin() - 1, size).length() == 1) {
-				if (it2 != seafood_count.end()) {
-					num = std::stoi(line.substr(it - line.begin() - 1, size)) - '0' + *it2;
-					++it2;
-					size = 0;
-				}
-				else if (it3 != meat_count.end()) {
-					num = std::stoi(line.substr(it - line.begin() - 1, size)) - '0' + *it3;
-					++it3;
-					size = 0;
-				}
-				else if (it4 != combination_count.end()) {
-					num = std::stoi(line.substr(it - line.begin() - 1, size)) - '0' + *it4;
-					++it4;
-					size = 0;
-				}
-				if (num < 10) {
-					data += std::to_string(num + '0') + " ";
-				}
-				else {
-					data += std::to_string(num) + " ";
-				}
-			}
-			size++;
-		}
-		return data; // return data to be used in overwrite
-	}	
-	// initial database initialization, adds values from dishes containers to data
-	else if (line == "") {
-		while (it2 != seafood_count.end()) {
-			data += std::to_string(*it2) + " ";
-			++it2;
-		}
-		while (it3 != seafood_count.end()) {
-			data += std::to_string(*it3) + " ";
-			++it3;
-		}
-		while (it4 != seafood_count.end()) {
-			data += std::to_string(*it4) + " ";
-			++it4;
-		}
-		return data;
-	}
-	return ""; // empty only if no condition matches
 }
 
 /*
