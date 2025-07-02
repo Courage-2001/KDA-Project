@@ -122,7 +122,8 @@ bool MainFrame::hasPatrons(int& id) {
 	if(index != -1)
 		if (container_[index].s_has_people == true) return false;
 
-	wxDialog* dialog = new wxDialog(this, 25, "Enter how many patrons are being sat", wxPoint(500, 300), wxDefaultSize);
+	wxDialog* dialog = new wxDialog(this, 27, "Enter how many patrons are being sat", wxPoint(500, 300), wxDefaultSize);
+	dialog->EnableCloseButton(false);
 	wxButton* button = new wxButton(dialog, wxID_ANY, "Confirm", wxPoint(150, 100), wxSize(75, 50));
 	wxSpinCtrl* spinCtrl = new wxSpinCtrl(dialog, 50, wxEmptyString, wxPoint(165, 75), wxDefaultSize, 16384L, 1, 4);
 	dataset temp = { 0, {}, 0, false, false};
@@ -156,6 +157,7 @@ bool MainFrame::hasOrders(int& id) {
 	int x = 10;
 	int tempId = 40;
 	wxDialog* dialog = new wxDialog(this, 27, "Order Menu", wxPoint(500, 300), wxSize(720, 400));
+	dialog->EnableCloseButton(false);
 	wxButton* orderButton = new wxButton(dialog, 26, "Confirm", wxPoint(300, 300), wxSize(75, 50));
 	orderButton->Bind(wxEVT_BUTTON, &MainFrame::updateOrdersOnClick, this);
 
@@ -322,7 +324,7 @@ void MainFrame::onButtonClick(wxCommandEvent& evt) {
 */
 void MainFrame::updatePatronNumberOnClick(wxCommandEvent& evt) {
 	spin_ = (wxSpinCtrl *)this->FindWindowById(50);
-	dialog_ = (wxDialog*)this->FindWindowById(25);
+	dialog_ = (wxDialog*)this->FindWindowById(27);
 	num_patrons_ = spin_->GetValue();
 
 	dialog_->EndModal(0);
@@ -395,40 +397,4 @@ void MainFrame::mainframeOnClose(wxCloseEvent& evt) {
 		admin->Destroy();
 		this->Destroy();
 	}
-}
-
-//not being used, may delete eventually
-MainFrame::Unique MainFrame::SwitchID(Unique& id) {
-	switch (id) 
-	{
-	case Table1: 
-		id = Table2;
-	case Table2:
-		id = Table3;
-	case Table3:
-		id = Table4;
-	case Table4:
-		id = Table5;
-	case Table5:
-		id = Table6;
-	case Table6:
-		id = Table7;
-	case Table7:
-		id = Table8;
-	case Table8:
-		id = Table9;
-	case Table9:
-		id = Table10;
-	case Table10:
-		id = Table11;
-	case Table11:
-		id = Table12;
-	case Table12:
-		id = Table13;
-	case Table13:
-		id = Table14;
-	case Table14:
-		id = Table15;
-	}
-	return id;
 }
