@@ -57,30 +57,27 @@ bool Admin::hasDatabase() {
 }
 
 /*
-	Function that will destroy all children in the Admin frame, then takes data from the database and inputs it into
-	num_data, where it will retrieve the values later on. 
-	The relevant controls will be created and will show how many times a dishes has been ordered this session to the user onto the
-	panel.
+	Function that will destroy all children in the Admin frame (except panel), then takes data from the database and 
+	inputs it into the vector data, where it will retrieve the values later on. 
+	The relevant controls will be created and will show how many times a dishes has been ordered this session to the 
+	user onto the panel.
 */
 void Admin::displayDataFromDatabase() {
-	this->GetChildren()[0]->DestroyChildren(); // panel destroys all children
-	std::vector<std::string> num_data = {};
-	std::vector<std::string> name_data = {"Lobster", "Crab", "Seabass", "Tuna", "Scallops",
-											"Steak", "Veal", "Chicken", "Lamb", "Porkchops",
-											"Stk & Lx", "Surf & Turf", "Ch & Stk", "Sh over Ling", "Stk with Sh" };
+	this->GetChildren()[0]->DestroyChildren();
+	std::vector<std::pair<std::string, std::string>> data = { {"Lobster", ""}, {"Crab", ""}, {"Seabass", ""}, {"Tuna", ""}, {"Scallops", ""},
+																   {"Steak", ""}, {"Veal", ""}, {"Chicken", ""}, {"Lamb", ""}, {"Porkchops", ""},
+																   {"Stk & Lx", ""}, {"Surf & Turf", ""}, {"Ch & Stk", ""}, {"Sh over Ling", ""}, {"Stk with Sh", ""} };
 	std::ifstream database("Database.txt");
 	std::string num = "";
 	int line = 1;
 	int size = 0;
 	while (std::getline(database, num)) {
 		if (line == 3) {
+			int index = 0;
 			for (auto it = num.begin(); it != num.end(); ++it) {
-				if (*it == ' ' && num.substr(it - num.begin() - size, size).length() >= 2) {
-					num_data.push_back(num.substr(it - num.begin() - size, size)); //pushback all valid inputs in line 3 of database (not including ' ')
-					size = 0;
-				}
-				else if (*it == ' ' && num.substr(it - num.begin() - size, size).length() == 1) {
-					num_data.push_back(num.substr(it - num.begin() - size, size));
+				if (*it == ' ') {
+					data[index].second = std::move((num.substr(it - num.begin() - size, size))); //pushback all valid inputs in line 3 of database (not including ' ')
+					index++;
 					size = 0;
 				}
 				size++;
@@ -94,7 +91,7 @@ void Admin::displayDataFromDatabase() {
 	int x = 50;
 	int y = 50;
 	for (int i = 0; i < 15; i++) {
-		std::string dish_data = name_data[i] + " ordered: " + num_data[i];
+		std::string dish_data = std::move(data[i].first) + " ordered: " + std::move(data[i].second);
 		new wxStaticText(panel, wxID_ANY, dish_data, wxPoint(x, y), wxSize(180, 35));
 
 		y += 50;
