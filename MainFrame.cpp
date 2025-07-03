@@ -61,13 +61,14 @@ void MainFrame::createListBox(wxWindow* panel) {
 		new wxListBox(panel, id, wxPoint(x, y), wxSize(120, 100), {});
 
 		if (index != -1) {
-			if (getContainer()[index].s_has_ordered == true) {
+			if (getContainer()[index].s_has_ordered == true && getContainer()[index].s_food_served == false) {
 				listbox_ = (wxListBox*)panel->GetChildren()[i];
 				listbox_->InsertItems(getContainer()[index].s_order, 0);
 			}
 		}
 
 		panel->GetChildren()[i]->SetBackgroundColour(wxColor(0, 0, 200));
+		panel->GetChildren()[i]->Bind(wxEVT_LISTBOX_DCLICK, &MainFrame::onListBoxClicked, this);
 		id++;
 		y += 140;
 		if (y == 750) {
@@ -89,7 +90,10 @@ void MainFrame::createButtons(wxWindow* panel) {
 		index = findIndex(id);
 
 		if (index != -1) {
-			if (getContainer()[index].s_has_ordered == true) {
+			if (getContainer()[index].s_food_served == true) {
+			panel->GetChildren()[i]->SetBackgroundColour(wxColor(255, 0, 0));
+			}
+			else if (getContainer()[index].s_has_ordered == true) {
 				panel->GetChildren()[i]->SetBackgroundColour(wxColor(255, 165, 0));
 			}
 			else if (getContainer()[index].s_has_people == true) {
@@ -348,6 +352,28 @@ void MainFrame::createOptionsOnClick(wxCommandEvent& evt) {
 	else if (choice_->GetSelection() == 2) {
 		if (this->FindWindowById(tempId) != NULL) this->FindWindowById(tempId)->Destroy();
 		listbox_ = new wxListBox(dialog_, tempId, wxPoint(choice_->GetPosition().x, 150), wxDefaultSize, combination_[0].s_array);
+	}
+}
+
+/*
+	Event that activates when double clicking selection of listbox. A modal will pop up, asking the user if the food has been served. If yes, 
+	we will set the param s_food_served to true, which is linked by ID, and destroy the listbox, rearranging the UI upon deletion. The table
+	color gets updated accordingly on createButtons(). 
+
+	template writen, TODO: 
+		- work on modal UI, rearrange the listboxes on deletion (probably destroy all children and call createListBoxes)
+		- instead of displaying all boxes at once, just create boxes for what is currently in the container (more difficult)
+*/
+void MainFrame::onListBoxClicked(wxCommandEvent& evt) {
+	int listboxID = evt.GetId();
+	wxDialog* dialog = new wxDialog(this, 27, "Action Menu", wxPoint(500, 300), wxDefaultSize);
+
+	if (dialog->ShowModal() != wxID_OK) {
+		container_[findIndex(listboxID)].s_food_served = true;
+		this->FindWindowById(listboxID)->Destroy();
+		delete dialog;
+		dialog = nullptr;
+		wxLogStatus("Food has been served! The new color of the table on switch is red");
 	}
 }
 

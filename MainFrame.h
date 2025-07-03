@@ -41,6 +41,7 @@ public:
 	void onButtonClick(wxCommandEvent& evt);
 	void switchButtonClicked(wxCommandEvent& evt);
 	void onSettingClicked(wxCommandEvent& evt);
+	void onListBoxClicked(wxCommandEvent& evt);
 	void updatePatronNumberOnClick(wxCommandEvent& evt);
 	void createOptionsOnClick(wxCommandEvent& evt);
 	void updateOrdersOnClick(wxCommandEvent& evt);
