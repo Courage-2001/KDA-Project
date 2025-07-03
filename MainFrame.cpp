@@ -152,7 +152,7 @@ bool MainFrame::hasPatrons(int& id) {
 	wxDialog* dialog = new wxDialog(this, 27, "Enter how many patrons are being sat", wxPoint(500, 300), wxDefaultSize);
 	wxButton* button = new wxButton(dialog, wxID_ANY, "Confirm", wxPoint(150, 100), wxSize(75, 50));
 	wxSpinCtrl* spinCtrl = new wxSpinCtrl(dialog, 50, wxEmptyString, wxPoint(165, 75), wxDefaultSize, 16384L, 1, 4);
-	dataset temp = { 0, {}, 0, false, false};
+	dataset temp = { 0, {}, 0, false, false, false};
 	button->Bind(wxEVT_BUTTON, &MainFrame::updatePatronNumberOnClick, this);
 
 	//if UpdatePatronOnClick event terminates dialog, update variables (only if successful process)

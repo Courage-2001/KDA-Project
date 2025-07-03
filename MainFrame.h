@@ -15,6 +15,7 @@ public:
 		int s_patrons_sat = 0;
 		bool s_has_ordered = false;
 		bool s_has_people = false;
+		bool s_food_served = false;
 	};
 
 	//need to replace vector with just an array at some point (i think?)
