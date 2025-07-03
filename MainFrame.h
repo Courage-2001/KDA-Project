@@ -36,11 +36,10 @@ public:
 	std::vector<int> getSeafoodCount() const;
 	std::vector<int> getMeatCount() const;
 	std::vector<int> getCombinationCount() const;
-	Unique SwitchID(Unique& id); //unused, must remove or rework in the future
 	void updateCountOfDishes();
 	void onButtonClick(wxCommandEvent& evt);
 	void switchButtonClicked(wxCommandEvent& evt);
-	void switchSettingClicked(wxCommandEvent& evt);
+	void onSettingClicked(wxCommandEvent& evt);
 	void updatePatronNumberOnClick(wxCommandEvent& evt);
 	void createOptionsOnClick(wxCommandEvent& evt);
 	void updateOrdersOnClick(wxCommandEvent& evt);
