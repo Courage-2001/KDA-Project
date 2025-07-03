@@ -7,7 +7,6 @@
 Admin::Admin(const wxString& title, wxFrame* frame) : wxFrame(nullptr, wxID_ANY, title) {
 	SetClientSize(800, 600);
 	Center();
-	Show();
 	frame_ = frame;
 
 	wxPanel* loginPanel = new wxPanel(this, wxID_ANY, wxPoint(0, 0), wxSize(800, 800));
