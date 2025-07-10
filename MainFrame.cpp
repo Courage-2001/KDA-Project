@@ -40,45 +40,36 @@ MainFrame::MainFrame(const wxString& title) : wxFrame(nullptr, wxID_ANY, title) 
 }
 
 /*
-	Loops that adds inline buttons, where y(location of button) increments until reaches a certain point,
-	moves to the next column of buttons.
-
-	CreateButtons() will remember color from previous instance, if id on creation is present already in container. Every
-	button is also binded on runtime, to OnButtonClick(). 
-
-	NOTE: Unique enum does not work when retrieving from wxWidgets functions, must figure out alternative. 
-		  For now, id of type inter is to represent table number 
-		  (where ID of 2 represents table 1 , ID of 3 is table 2, and so on because numbers 0 & 1 are offlimits for framework)
+	Function that creates boxes only if conditions have been match, where each listbox will be binded to onListBoxClicked() on runtime
 */
 void MainFrame::createListBox(wxWindow* panel) {
-	//Unique id = Table1;
-	int id = 2;
 	int x = 150;
 	int y = 50;
-	int index = 0;
-	for (int i = 0; i < 15; i++) {
-		index = findIndex(id);
-		new wxListBox(panel, id, wxPoint(x, y), wxSize(120, 100), {});
-
-		if (index != -1) {
-			if (getContainer()[index].s_has_ordered == true && getContainer()[index].s_food_served == false) {
-				listbox_ = (wxListBox*)panel->GetChildren()[i];
-				listbox_->InsertItems(getContainer()[index].s_order, 0);
+	for (auto it = container_.begin(); it != container_.end(); ++it) {
+		if (it->s_has_ordered == true && it->s_food_served == false) {
+			listbox_ = new wxListBox(panel, it->s_id, wxPoint(x, y), wxSize(120, 100), {});
+			listbox_->InsertItems(it->s_order, 0);
+			listbox_->SetBackgroundColour(wxColor(0, 0, 200));
+			listbox_->Bind(wxEVT_LISTBOX_DCLICK, &MainFrame::onListBoxClicked, this);
+			y += 140;
+			if (y == 750) {
+				x += 150;
+				y = 50;
 			}
-		}
-
-		panel->GetChildren()[i]->SetBackgroundColour(wxColor(0, 0, 200));
-		panel->GetChildren()[i]->Bind(wxEVT_LISTBOX_DCLICK, &MainFrame::onListBoxClicked, this);
-		id++;
-		y += 140;
-		if (y == 750) {
-			x += 150;
-			y = 50;
 		}
 	}
 }
 
+/*
+	Loop that adds inline buttons, where y(location of button) increments until reaches a certain point,
+	moves to the next column of buttons.
 
+	CreateButtons() will remember color from previous instance, if id on creation is present already in container. Every
+	button is also binded on runtime, to OnButtonClick().
+
+	NOTE: id represent table number, which is of type integer 
+		  (where ID of 2 represents table 1 , ID of 3 is table 2, and so on because numbers 0 & 1 are offlimits for framework)
+*/
 void MainFrame::createButtons(wxWindow* panel) {
 	//Unique id = Table1;
 	int id = 2;
@@ -362,7 +353,7 @@ void MainFrame::createOptionsOnClick(wxCommandEvent& evt) {
 
 	template writen, TODO: 
 		- work on modal UI, rearrange the listboxes on deletion (probably destroy all children and call createListBoxes)
-		- instead of displaying all boxes at once, just create boxes for what is currently in the container (more difficult)
+		- instead of displaying all boxes at once, just create boxes for what is currently in the container (more difficult) (DONE)
 */
 void MainFrame::onListBoxClicked(wxCommandEvent& evt) {
 	int listboxID = evt.GetId();
@@ -370,7 +361,8 @@ void MainFrame::onListBoxClicked(wxCommandEvent& evt) {
 
 	if (dialog->ShowModal() != wxID_OK) {
 		container_[findIndex(listboxID)].s_food_served = true;
-		this->FindWindowById(listboxID)->Destroy();
+		this->GetChildren()[0]->DestroyChildren();
+		createListBox(this->GetChildren()[0]); //first panel
 		delete dialog;
 		dialog = nullptr;
 		wxLogStatus("Food has been served! The new color of the table on switch is red");
