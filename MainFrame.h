@@ -45,6 +45,7 @@ public:
 	void updatePatronNumberOnClick(wxCommandEvent& evt);
 	void createOptionsOnClick(wxCommandEvent& evt);
 	void updateOrdersOnClick(wxCommandEvent& evt);
+	void updateCurrentOrderStatusOnClick(wxCommandEvent& evt);
 	void mainframeOnClose(wxCloseEvent& evt);
 
 private:

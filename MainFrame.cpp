@@ -350,22 +350,47 @@ void MainFrame::createOptionsOnClick(wxCommandEvent& evt) {
 	Event that activates when double clicking selection of listbox. A modal will pop up, asking the user if the food has been served. If yes, 
 	we will set the param s_food_served to true, which is linked by ID, and destroy the listbox, rearranging the UI upon deletion. The table
 	color gets updated accordingly on createButtons(). 
-
-	template writen, TODO: 
-		- work on modal UI, rearrange the listboxes on deletion (probably destroy all children and call createListBoxes)
-		- instead of displaying all boxes at once, just create boxes for what is currently in the container (more difficult) (DONE)
 */
 void MainFrame::onListBoxClicked(wxCommandEvent& evt) {
 	int listboxID = evt.GetId();
-	wxDialog* dialog = new wxDialog(this, 27, "Action Menu", wxPoint(500, 300), wxDefaultSize);
+	listbox_ = (wxListBox*)this->FindWindowById(listboxID);
+	dialog_ = new wxDialog(this, 27, "Action Menu", wxPoint(500, 300), wxDefaultSize);
+	wxStaticText* text = new wxStaticText(dialog_, wxID_ANY, "Has the food been served?", wxPoint(125, 100));
+	wxButton* confirmButton = new wxButton(dialog_, wxID_ANY, "Yes", wxPoint(50, 150), wxSize(100, 50));
+	wxButton* rejectionButton = new wxButton(dialog_, wxID_ANY, "No", wxPoint(250, 150), wxSize(100, 50));
+	confirmButton->Bind(wxEVT_BUTTON, &MainFrame::updateCurrentOrderStatusOnClick, this);
+	rejectionButton->Bind(wxEVT_BUTTON, &MainFrame::updateCurrentOrderStatusOnClick, this);
 
-	if (dialog->ShowModal() != wxID_OK) {
-		container_[findIndex(listboxID)].s_food_served = true;
-		this->GetChildren()[0]->DestroyChildren();
-		createListBox(this->GetChildren()[0]); //first panel
-		delete dialog;
-		dialog = nullptr;
-		wxLogStatus("Food has been served! The new color of the table on switch is red");
+	if (dialog_->ShowModal() != wxID_OK) {
+		if (container_[findIndex(listboxID)].s_food_served == true) {
+			this->GetChildren()[0]->DestroyChildren();
+			createListBox(this->GetChildren()[0]); //first panel
+			delete dialog_;
+			dialog_ = nullptr;
+			wxLogStatus("Food has been served! The new color of the table on switch is red");
+		}
+		else {
+			delete dialog_;
+			dialog_ = nullptr;
+			wxLogStatus("s_food_served was not true or listbox_ was nullptr");
+		}
+	}
+}
+
+/*
+	Event that will either update the current order selected if it has been served or not, binded to the "Yes" and "No" buttons in the modal that
+	appears durent OnListBoxClicked event. Only updates if "Yes" button has been clicked on
+*/
+void MainFrame::updateCurrentOrderStatusOnClick(wxCommandEvent& evt) {
+	if (this->FindWindowById(evt.GetId())->GetLabel() == "Yes") {
+		if (listbox_ != nullptr) {
+			int listboxID = listbox_->GetId();
+			container_[findIndex(listboxID)].s_food_served = true;
+			dialog_->EndModal(0);
+		}
+	}
+	else {
+		dialog_->EndModal(0);
 	}
 }
 
