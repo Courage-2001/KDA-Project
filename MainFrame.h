@@ -5,12 +5,9 @@
 
 class MainFrame : public wxFrame { //mainframe inherits from wxFrame
 public:
-	enum Unique { Table1 = 2, Table2, Table3, Table4, Table5, Table6, Table7, 
-		Table8, Table9, Table10, Table11, Table12, Table13, Table14, Table15
-	};
 
-	struct dataset {
-		int s_id = 0;
+	struct TableData {
+		int s_table_id = 0;
 		wxArrayString s_order = {};
 		int s_patrons_sat = 0;
 		bool s_has_ordered = false;
@@ -33,7 +30,7 @@ public:
 	bool hasPatrons(int& id);
 	bool hasOrders(int& id);
 	int findIndex(int& id) const;
-	std::vector<dataset> getContainer() const;
+	std::vector<TableData> getContainer() const;
 	std::vector<int> getSeafoodCount() const;
 	std::vector<int> getMeatCount() const;
 	std::vector<int> getCombinationCount() const;
@@ -51,7 +48,7 @@ public:
 private:
 	int num_patrons_;
 	wxArrayString event_container_;
-	std::vector<dataset> container_;
+	std::vector<TableData> container_;
 	wxFrame* frame_;
 	wxListBox* listbox_;
 	wxChoice* choice_;
