@@ -15,6 +15,7 @@ public:
 		int s_patrons_sat = 0;
 		bool s_has_ordered = false;
 		bool s_has_people = false;
+		bool s_food_served = false;
 	};
 
 	//need to replace vector with just an array at some point (i think?)
@@ -40,9 +41,11 @@ public:
 	void onButtonClick(wxCommandEvent& evt);
 	void switchButtonClicked(wxCommandEvent& evt);
 	void onSettingClicked(wxCommandEvent& evt);
+	void onListBoxClicked(wxCommandEvent& evt);
 	void updatePatronNumberOnClick(wxCommandEvent& evt);
 	void createOptionsOnClick(wxCommandEvent& evt);
 	void updateOrdersOnClick(wxCommandEvent& evt);
+	void updateCurrentOrderStatusOnClick(wxCommandEvent& evt);
 	void mainframeOnClose(wxCloseEvent& evt);
 
 private:

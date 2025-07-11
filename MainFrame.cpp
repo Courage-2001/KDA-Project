@@ -40,46 +40,37 @@ MainFrame::MainFrame(const wxString& title) : wxFrame(nullptr, wxID_ANY, title) 
 }
 
 /*
-	Loops that adds inline buttons, where y(location of button) increments until reaches a certain point,
-	moves to the next column of buttons.
-
-	CreateButtons() will remember color from previous instance, if id on creation is present already in container. Every
-	button is also binded on runtime, to OnButtonClick(). 
-
-	NOTE: Unique enum does not work when retrieving from wxWidgets functions, must figure out alternative. 
-		  For now, id of type inter is to represent table number 
-		  (where ID of 2 represents table 1 , ID of 3 is table 2, and so on because numbers 0 & 1 are offlimits for framework)
+	Function that creates boxes only if conditions have been match, where each listbox will be binded to onListBoxClicked() on runtime
 */
 void MainFrame::createListBox(wxWindow* panel) {
-	//Unique id = Table1;
-	int id = 2;
 	int x = 150;
 	int y = 50;
-	int index = 0;
-	for (int i = 0; i < 15; i++) {
-		index = findIndex(id);
-		new wxListBox(panel, id, wxPoint(x, y), wxSize(120, 100), {});
-
-		if (index != -1) {
-			if (getContainer()[index].s_has_ordered == true) {
-				listbox_ = (wxListBox*)panel->GetChildren()[i];
-				listbox_->InsertItems(getContainer()[index].s_order, 0);
+	for (auto it = container_.begin(); it != container_.end(); ++it) {
+		if (it->s_has_ordered == true && it->s_food_served == false) {
+			listbox_ = new wxListBox(panel, it->s_table_id, wxPoint(x, y), wxSize(120, 100), {});
+			listbox_->InsertItems(it->s_order, 0);
+			listbox_->SetBackgroundColour(wxColor(0, 0, 200));
+			listbox_->Bind(wxEVT_LISTBOX_DCLICK, &MainFrame::onListBoxClicked, this);
+			y += 140;
+			if (y == 750) {
+				x += 150;
+				y = 50;
 			}
-		}
-
-		panel->GetChildren()[i]->SetBackgroundColour(wxColor(0, 0, 200));
-		id++;
-		y += 140;
-		if (y == 750) {
-			x += 150;
-			y = 50;
 		}
 	}
 }
 
+/*
+	Loop that adds inline buttons, where y(location of button) increments until reaches a certain point,
+	moves to the next column of buttons.
 
+	CreateButtons() will remember color from previous instance, if id on creation is present already in container. Every
+	button is also binded on runtime, to OnButtonClick().
+
+	NOTE: id represent table number, which is of type integer 
+		  (where ID of 2 represents table 1 , ID of 3 is table 2, and so on because numbers 0 & 1 are offlimits for framework)
+*/
 void MainFrame::createButtons(wxWindow* panel) {
-	//Unique id = Table1;
 	int id = 2;
 	int x = 150;
 	int y = 100;
@@ -89,7 +80,10 @@ void MainFrame::createButtons(wxWindow* panel) {
 		index = findIndex(id);
 
 		if (index != -1) {
-			if (getContainer()[index].s_has_ordered == true) {
+			if (getContainer()[index].s_food_served == true) {
+			panel->GetChildren()[i]->SetBackgroundColour(wxColor(255, 0, 0));
+			}
+			else if (getContainer()[index].s_has_ordered == true) {
 				panel->GetChildren()[i]->SetBackgroundColour(wxColor(255, 165, 0));
 			}
 			else if (getContainer()[index].s_has_people == true) {
@@ -110,7 +104,7 @@ void MainFrame::createButtons(wxWindow* panel) {
 	}
 }
 
-std::vector<MainFrame::dataset> MainFrame::getContainer() const {
+std::vector<MainFrame::TableData> MainFrame::getContainer() const {
 	return container_;
 }
 
@@ -130,18 +124,18 @@ std::vector<int> MainFrame::getCombinationCount() const {
 int MainFrame::findIndex(int& id) const {
 	int i = 0;
 	for (auto it = container_.begin(); it != container_.end(); ++it) {
-		if (it->s_id == id) return i;
+		if (it->s_table_id == id) return i;
 		i++;
 	}
 	return -1;
 }
 
 /*
-	Function that creates a dialog, intended purpose is to take an input integer by user, then write to the temp dataset
-	id, number of patrons, and people_sat_, which is then fed into OnButtonClick event, 
+	Function that creates a dialog, intended purpose is to take an input integer by user, then write to the table_data
+	the table id, number of patrons, and if people have been sat, which is then fed into OnButtonClick event, 
 	changing color of button and pushing back data.
 
-	Returns false if people_sat_ is true OR if num_patrons != 0, otherwise return true once process is completed once.
+	Returns false if s_has_people is true OR if num_patrons = 0, otherwise return true once process is completed once.
 */
 bool MainFrame::hasPatrons(int& id) {
 	num_patrons_ = 0;
@@ -152,15 +146,15 @@ bool MainFrame::hasPatrons(int& id) {
 	wxDialog* dialog = new wxDialog(this, 27, "Enter how many patrons are being sat", wxPoint(500, 300), wxDefaultSize);
 	wxButton* button = new wxButton(dialog, wxID_ANY, "Confirm", wxPoint(150, 100), wxSize(75, 50));
 	wxSpinCtrl* spinCtrl = new wxSpinCtrl(dialog, 50, wxEmptyString, wxPoint(165, 75), wxDefaultSize, 16384L, 1, 4);
-	dataset temp = { 0, {}, 0, false, false};
+	TableData table_data;
 	button->Bind(wxEVT_BUTTON, &MainFrame::updatePatronNumberOnClick, this);
 
 	//if UpdatePatronOnClick event terminates dialog, update variables (only if successful process)
 	if (dialog->ShowModal() != wxID_OK) {
 		if (num_patrons_ != 0) {
-			temp.s_id = id;
-			temp.s_patrons_sat = num_patrons_;
-			temp.s_has_people = true;
+			table_data.s_table_id = id;
+			table_data.s_patrons_sat = num_patrons_;
+			table_data.s_has_people = true;
 		}
 		else {
 			delete dialog;
@@ -168,7 +162,7 @@ bool MainFrame::hasPatrons(int& id) {
 			return false;
 		}
 	}
-	container_.push_back(temp);
+	container_.push_back(table_data);
 	return true;
 }
 
@@ -348,6 +342,54 @@ void MainFrame::createOptionsOnClick(wxCommandEvent& evt) {
 	else if (choice_->GetSelection() == 2) {
 		if (this->FindWindowById(tempId) != NULL) this->FindWindowById(tempId)->Destroy();
 		listbox_ = new wxListBox(dialog_, tempId, wxPoint(choice_->GetPosition().x, 150), wxDefaultSize, combination_[0].s_array);
+	}
+}
+
+/*
+	Event that activates when double clicking selection of listbox. A modal will pop up, asking the user if the food has been served. If yes, 
+	we will set the param s_food_served to true, which is linked by ID, and destroy the listbox, rearranging the UI upon deletion. The table
+	color gets updated accordingly on createButtons(). 
+*/
+void MainFrame::onListBoxClicked(wxCommandEvent& evt) {
+	int listboxID = evt.GetId();
+	listbox_ = (wxListBox*)this->FindWindowById(listboxID);
+	dialog_ = new wxDialog(this, 27, "Action Menu", wxPoint(500, 300), wxDefaultSize);
+	wxStaticText* text = new wxStaticText(dialog_, wxID_ANY, "Has the food been served?", wxPoint(125, 100));
+	wxButton* confirmButton = new wxButton(dialog_, wxID_ANY, "Yes", wxPoint(50, 150), wxSize(100, 50));
+	wxButton* rejectionButton = new wxButton(dialog_, wxID_ANY, "No", wxPoint(250, 150), wxSize(100, 50));
+	confirmButton->Bind(wxEVT_BUTTON, &MainFrame::updateCurrentOrderStatusOnClick, this);
+	rejectionButton->Bind(wxEVT_BUTTON, &MainFrame::updateCurrentOrderStatusOnClick, this);
+
+	if (dialog_->ShowModal() != wxID_OK) {
+		if (container_[findIndex(listboxID)].s_food_served == true) {
+			this->GetChildren()[0]->DestroyChildren();
+			createListBox(this->GetChildren()[0]); //first panel
+			delete dialog_;
+			dialog_ = nullptr;
+			wxLogStatus("Food has been served! The new color of the table on switch is red");
+		}
+		else {
+			delete dialog_;
+			dialog_ = nullptr;
+			wxLogStatus("s_food_served was not true or listbox_ was nullptr");
+		}
+	}
+}
+
+/*
+	Event that will either update the current order selected if it has been served or not, binded to the "Yes" and "No" buttons in the modal that
+	appears durent OnListBoxClicked event. Only updates if "Yes" button has been clicked on
+*/
+void MainFrame::updateCurrentOrderStatusOnClick(wxCommandEvent& evt) {
+	if (this->FindWindowById(evt.GetId())->GetLabel() == "Yes") {
+		if (listbox_ != nullptr) {
+			int listboxID = listbox_->GetId();
+			container_[findIndex(listboxID)].s_food_served = true;
+			dialog_->EndModal(0);
+		}
+	}
+	else {
+		dialog_->EndModal(0);
 	}
 }
 
