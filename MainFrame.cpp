@@ -16,10 +16,9 @@ MainFrame::MainFrame(const wxString& title) : wxFrame(nullptr, wxID_ANY, title) 
 	spin_ = nullptr;
 	dialog_ = nullptr;
 	hasLogin_ = false;
-	seafood_ = { {{"Lobster", "Crab", "Seabass", "Tuna", "Scallops"}, {0, 0, 0, 0, 0}} };
-	meat_ = { {{"Steak", "Veal", "Chicken", "Lamb", "Porkchops"}, {0, 0, 0, 0, 0}} };
-	combination_ = { {{"Steak and Lobster", "Surf and Turf", "Chicken and Steak", "Shrimp over Linguini", "Steak with Shrimp"},
-						{0, 0, 0, 0, 0}} };
+	seafood_ = { {"Lobster", 0}, {"Crab", 0}, {"Seabass", 0}, {"Tuna", 0}, {"Scallops", 0} };
+	meat_ = { {"Steak",0}, {"Veal",0}, {"Chicken",0}, {"Lamb",0}, {"Porkchops",0} };
+	combination_ = { {"Steak and Lobster",0}, {"Surf and Turf",0}, {"Chicken and Steak",0}, {"Shrimp over Linguini",0}, {"Steak with Shrimp",0} };
 
 
 	wxPanel* firstPanel = new wxPanel(this, wxID_ANY, wxPoint(0, 0), wxSize(800, 800));
@@ -105,19 +104,18 @@ void MainFrame::createButtons(wxWindow* panel) {
 	}
 }
 
-std::vector<int> MainFrame::getSeafoodCount() const {
-	return seafood_[0].s_count;
+std::map<wxString, int> MainFrame::getSeafoodCount() const {
+	return seafood_;
 }
 
-std::vector<int> MainFrame::getMeatCount() const {
-	return meat_[0].s_count;
+std::map<wxString, int> MainFrame::getMeatCount() const {
+	return meat_;
 }
 
-std::vector<int> MainFrame::getCombinationCount() const {
-	return combination_[0].s_count;
+std::map<wxString, int> MainFrame::getCombinationCount() const {
+	return combination_;
 }
 
-//need to change name for more clarity
 int MainFrame::findIndexOfTable(int& id) const {
 	int i = 0;
 	for (auto it = restaurant_data_.begin(); it != restaurant_data_.end(); ++it) {
@@ -242,18 +240,31 @@ bool MainFrame::hasOrders(int& id) {
 void MainFrame::createOptionsOnClick(wxCommandEvent& evt) {
 	choice_ = (wxChoice*)this->FindWindowById(evt.GetId());
 	int listboxId = evt.GetId() + 5;
+	wxArrayString choices = {};
 
 	if (choice_->GetSelection() == 0) {
 		if (this->FindWindowById(listboxId) != NULL) this->FindWindowById(listboxId)->Destroy();
-		listbox_ = new wxListBox(dialog_, listboxId, wxPoint(choice_->GetPosition().x, 150), wxDefaultSize, seafood_[0].s_array);
+		choices.Clear();
+		for (auto it = seafood_.begin(); it != seafood_.end(); ++it) {
+			choices.push_back(it->first);
+		}
+		listbox_ = new wxListBox(dialog_, listboxId, wxPoint(choice_->GetPosition().x, 150), wxDefaultSize, choices);
 	}
 	else if (choice_->GetSelection() == 1) {
 		if (this->FindWindowById(listboxId) != NULL) this->FindWindowById(listboxId)->Destroy();
-		listbox_ = new wxListBox(dialog_, listboxId, wxPoint(choice_->GetPosition().x, 150), wxDefaultSize, meat_[0].s_array);
+		choices.Clear();
+		for (auto it = meat_.begin(); it != meat_.end(); ++it) {
+			choices.push_back(it->first);
+		}
+		listbox_ = new wxListBox(dialog_, listboxId, wxPoint(choice_->GetPosition().x, 150), wxDefaultSize, choices);
 	}
 	else if (choice_->GetSelection() == 2) {
 		if (this->FindWindowById(listboxId) != NULL) this->FindWindowById(listboxId)->Destroy();
-		listbox_ = new wxListBox(dialog_, listboxId, wxPoint(choice_->GetPosition().x, 150), wxDefaultSize, combination_[0].s_array);
+		choices.Clear();
+		for (auto it = combination_.begin(); it != combination_.end(); ++it) {
+			choices.push_back(it->first);
+		}
+		listbox_ = new wxListBox(dialog_, listboxId, wxPoint(choice_->GetPosition().x, 150), wxDefaultSize, choices);
 	}
 }
 
@@ -304,31 +315,23 @@ void MainFrame::updateCountOfDishes() {
 	listbox_ = (wxListBox*)this->FindWindowById(listId);
 	while (choice_ != nullptr) {
 		if (choice_->GetSelection() == 0) {
-			for (auto it = seafood_[0].s_array.begin(); it != seafood_[0].s_array.end(); ++it) {
-				if (listbox_ != nullptr) {
-					if (*it == listbox_->GetStringSelection()) {
-						seafood_[0].s_count[it - seafood_[0].s_array.begin()] += 1;
-						break;
-					}
+			if (listbox_ != nullptr) {
+				if (seafood_.find(listbox_->GetStringSelection()) != seafood_.end()) {
+					seafood_.find(listbox_->GetStringSelection())->second += 1;
 				}
 			}
 		}
 		else if (choice_->GetSelection() == 1) {
-			for (auto it = meat_[0].s_array.begin(); it != meat_[0].s_array.end(); ++it) {
-				if (listbox_ != nullptr) {
-					if (*it == listbox_->GetStringSelection()) {
-						meat_[0].s_count[it - meat_[0].s_array.begin()] += 1;
-						break;
-					}
+			if (listbox_ != nullptr) {
+				if (meat_.find(listbox_->GetStringSelection()) != meat_.end()) {
+					meat_.find(listbox_->GetStringSelection())->second += 1;
 				}
 			}
 		}
 		else if (choice_->GetSelection() == 2) {
-			for (auto it = combination_[0].s_array.begin(); it != combination_[0].s_array.end(); ++it) {
-				if (listbox_ != nullptr) {
-					if (*it == listbox_->GetStringSelection()) {
-						combination_[0].s_count[it - combination_[0].s_array.begin()] += 1;
-					}
+			if (listbox_ != nullptr) {
+				if (combination_.find(listbox_->GetStringSelection()) != combination_.end()) {
+					combination_.find(listbox_->GetStringSelection())->second += 1;
 				}
 			}
 		}

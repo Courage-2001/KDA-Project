@@ -2,6 +2,7 @@
 #include <wx/wx.h>
 #include <wx/spinctrl.h>
 #include "Admin.h"
+#include <map>
 
 class MainFrame : public wxFrame { //mainframe inherits from wxFrame
 public:
@@ -15,14 +16,6 @@ public:
 		bool s_food_served = false;
 	};
 
-	//need to replace vector with just an array at some point (i think?)
-	//the index of a dish in s_array corresponds to the index in s_count 
-	//so if steak was index 0, then index 0 in s_count represents # of times steak has been ordered this session
-	struct logistic {
-		wxArrayString s_array;
-		std::vector<int> s_count;
-	};
-
 	MainFrame(const wxString& title); //wxstring is str implementation of wxwidgets
 
 	void createButtons(wxWindow* panel);
@@ -30,9 +23,9 @@ public:
 	bool hasPatrons(int& id);
 	bool hasOrders(int& id);
 	int findIndexOfTable(int& id) const;
-	std::vector<int> getSeafoodCount() const;
-	std::vector<int> getMeatCount() const;
-	std::vector<int> getCombinationCount() const;
+	std::map<wxString, int> getSeafoodCount() const;
+	std::map<wxString, int> getMeatCount() const;
+	std::map<wxString, int> getCombinationCount() const;
 	void updateCountOfDishes();
 	void onButtonClick(wxCommandEvent& evt);
 	void switchButtonClicked(wxCommandEvent& evt);
@@ -53,9 +46,9 @@ private:
 	wxChoice* choice_;
 	wxSpinCtrl* spin_;
 	wxDialog* dialog_;
-	std::vector<logistic> seafood_;
-	std::vector<logistic> meat_;
-	std::vector<logistic> combination_;
+	std::map<wxString, int> seafood_;
+	std::map<wxString, int> meat_;
+	std::map<wxString, int> combination_;
 	bool hasLogin_;
 };
 
