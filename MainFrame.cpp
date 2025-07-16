@@ -8,18 +8,17 @@ MainFrame::MainFrame(const wxString& title) : wxFrame(nullptr, wxID_ANY, title) 
 	Center();
 	Show();
 	num_patrons_ = 0;
-	event_container_ = {}; //really need to change name to understand what the purpose of this var does
-	container_ = {};
+	table_order_ = {};
+	restaurant_data_ = {};
 	frame_ = this; //initialize frame_ to point to MainFrame to pass as a param into admin constructor
 	listbox_ = nullptr;
 	choice_ = nullptr;
 	spin_ = nullptr;
 	dialog_ = nullptr;
 	hasLogin_ = false;
-	seafood_ = { {{"Lobster", "Crab", "Seabass", "Tuna", "Scallops"}, {0, 0, 0, 0, 0}} };
-	meat_ = { {{"Steak", "Veal", "Chicken", "Lamb", "Porkchops"}, {0, 0, 0, 0, 0}} };
-	combination_ = { {{"Steak and Lobster", "Surf and Turf", "Chicken and Steak", "Shrimp over Linguini", "Steak with Shrimp"},
-						{0, 0, 0, 0, 0}} };
+	seafood_ = { {"Lobster", 0}, {"Crab", 0}, {"Seabass", 0}, {"Tuna", 0}, {"Scallops", 0} };
+	meat_ = { {"Steak",0}, {"Veal",0}, {"Chicken",0}, {"Lamb",0}, {"Porkchops",0} };
+	combination_ = { {"Steak and Lobster",0}, {"Surf and Turf",0}, {"Chicken and Steak",0}, {"Shrimp over Linguini",0}, {"Steak with Shrimp",0} };
 
 
 	wxPanel* firstPanel = new wxPanel(this, wxID_ANY, wxPoint(0, 0), wxSize(800, 800));
@@ -45,11 +44,11 @@ MainFrame::MainFrame(const wxString& title) : wxFrame(nullptr, wxID_ANY, title) 
 void MainFrame::createListBox(wxWindow* panel) {
 	int x = 150;
 	int y = 50;
-	for (auto it = container_.begin(); it != container_.end(); ++it) {
+	for (auto it = restaurant_data_.begin(); it != restaurant_data_.end(); ++it) {
 		if (it->s_has_ordered == true && it->s_food_served == false) {
 			listbox_ = new wxListBox(panel, it->s_table_id, wxPoint(x, y), wxSize(120, 100), {});
-			listbox_->InsertItems(it->s_order, 0);
 			listbox_->SetBackgroundColour(wxColor(0, 0, 200));
+			listbox_->InsertItems(it->s_order, 0);
 			listbox_->Bind(wxEVT_LISTBOX_DCLICK, &MainFrame::onListBoxClicked, this);
 			y += 140;
 			if (y == 750) {
@@ -71,114 +70,92 @@ void MainFrame::createListBox(wxWindow* panel) {
 		  (where ID of 2 represents table 1 , ID of 3 is table 2, and so on because numbers 0 & 1 are offlimits for framework)
 */
 void MainFrame::createButtons(wxWindow* panel) {
-	int id = 2;
+	int tableID = 2;
 	int x = 150;
 	int y = 100;
 	int index = 0;
 	for (int i = 0; i < 15; i++) {
-		new wxButton(panel, id, "", wxPoint(x, y), wxSize(75, 75));
-		index = findIndex(id);
+		wxButton* table = new wxButton(panel, tableID, "", wxPoint(x, y), wxSize(75, 75));
+		index = findIndexOfTable(tableID);
 
 		if (index != -1) {
-			if (getContainer()[index].s_food_served == true) {
-			panel->GetChildren()[i]->SetBackgroundColour(wxColor(255, 0, 0));
+			if (restaurant_data_[index].s_food_served == true) {
+				table->SetBackgroundColour(wxColor(255, 0, 0));
 			}
-			else if (getContainer()[index].s_has_ordered == true) {
-				panel->GetChildren()[i]->SetBackgroundColour(wxColor(255, 165, 0));
+			else if (restaurant_data_[index].s_has_ordered == true) {
+				table->SetBackgroundColour(wxColor(255, 165, 0));
 			}
-			else if (getContainer()[index].s_has_people == true) {
-				panel->GetChildren()[i]->SetBackgroundColour(wxColor(0, 255, 0));
+			else if (restaurant_data_[index].s_has_people == true) {
+				table->SetBackgroundColour(wxColor(0, 255, 0));
 			}
 		}
 		else {
-			panel->GetChildren()[i]->SetBackgroundColour(wxColor(0, 0, 0));
+			table->SetBackgroundColour(wxColor(0, 0, 0));
 		}
 
-		panel->GetChildren()[i]->Bind(wxEVT_BUTTON, &MainFrame::onButtonClick, this);
-		id++;
+		table->Bind(wxEVT_BUTTON, &MainFrame::onButtonClick, this);
+		tableID++;
 		y += 120;
 		if (y == 700) {
 			x += 150;
 			y = 100;
 		}
+		if (i == 14) table = nullptr;
 	}
 }
 
-std::vector<MainFrame::TableData> MainFrame::getContainer() const {
-	return container_;
-}
-
-std::vector<int> MainFrame::getSeafoodCount() const {
-	return seafood_[0].s_count;
-}
-
-std::vector<int> MainFrame::getMeatCount() const {
-	return meat_[0].s_count;
-}
-
-std::vector<int> MainFrame::getCombinationCount() const {
-	return combination_[0].s_count;
-}
-
-//need to change name for more clarity
-int MainFrame::findIndex(int& id) const {
+int MainFrame::findIndexOfTable(int& id) const {
 	int i = 0;
-	for (auto it = container_.begin(); it != container_.end(); ++it) {
+	for (auto it = restaurant_data_.begin(); it != restaurant_data_.end(); ++it) {
 		if (it->s_table_id == id) return i;
 		i++;
 	}
 	return -1;
 }
 
-/*
-	Function that creates a dialog, intended purpose is to take an input integer by user, then write to the table_data
-	the table id, number of patrons, and if people have been sat, which is then fed into OnButtonClick event, 
-	changing color of button and pushing back data.
-
-	Returns false if s_has_people is true OR if num_patrons = 0, otherwise return true once process is completed once.
-*/
+// Function that creates a dialog, intended purpose is to take an input integer by user, then write to the table_data
+// the table id, number of patrons, and if people have been sat, which is then fed into OnButtonClick event for the table
+// for the purposes of changing the color of button and pushing back data.
+// Returns false if s_has_people is true OR if num_patrons = 0, otherwise return true once process is completed once.
 bool MainFrame::hasPatrons(int& id) {
 	num_patrons_ = 0;
-	int index = findIndex(id);
+	int index = findIndexOfTable(id);
 	if(index != -1)
-		if (container_[index].s_has_people == true) return false;
+		if (restaurant_data_[index].s_has_people == true) return false;
 
-	wxDialog* dialog = new wxDialog(this, 27, "Enter how many patrons are being sat", wxPoint(500, 300), wxDefaultSize);
-	wxButton* button = new wxButton(dialog, wxID_ANY, "Confirm", wxPoint(150, 100), wxSize(75, 50));
-	wxSpinCtrl* spinCtrl = new wxSpinCtrl(dialog, 50, wxEmptyString, wxPoint(165, 75), wxDefaultSize, 16384L, 1, 4);
+	dialog_ = new wxDialog(this, wxID_ANY, "Enter how many patrons are being sat", wxPoint(500, 300), wxDefaultSize);
+	wxButton* button = new wxButton(dialog_, wxID_ANY, "Confirm", wxPoint(150, 100), wxSize(75, 50));
+	spin_ = new wxSpinCtrl(dialog_, wxID_ANY, wxEmptyString, wxPoint(165, 75), wxDefaultSize, 16384L, 1, 4);
 	TableData table_data;
 	button->Bind(wxEVT_BUTTON, &MainFrame::updatePatronNumberOnClick, this);
 
 	//if UpdatePatronOnClick event terminates dialog, update variables (only if successful process)
-	if (dialog->ShowModal() != wxID_OK) {
+	if (dialog_->ShowModal() != wxID_OK) {
 		if (num_patrons_ != 0) {
 			table_data.s_table_id = id;
 			table_data.s_patrons_sat = num_patrons_;
 			table_data.s_has_people = true;
 		}
 		else {
-			delete dialog;
-			dialog = nullptr;
+			delete dialog_;
+			dialog_ = nullptr;
+			spin_ = nullptr;
 			return false;
 		}
 	}
-	container_.push_back(table_data);
+	restaurant_data_.push_back(std::move(table_data));
 	return true;
 }
 
-/*
-	Event that creates ptrs pointing to existing controls within mainframe
-	Updates global var with value of spinctrl, and calls dialog method EndModal() when user clicks confirm,
-	which will activate rest of AddNumberOfPatrons()
-*/
-void MainFrame::updatePatronNumberOnClick(wxCommandEvent& evt) {
-	spin_ = (wxSpinCtrl*)this->FindWindowById(50);
-	dialog_ = (wxDialog*)this->FindWindowById(27);
-	num_patrons_ = spin_->GetValue();
 
+// Event that updates num_patrons_ with value of spinctrl and calls dialog method EndModal() when user clicks confirm
+// used to determine action during Modal of hasPatrons()
+void MainFrame::updatePatronNumberOnClick(wxCommandEvent& evt) {
+	num_patrons_ = spin_->GetValue();
 	dialog_->EndModal(0);
 	delete dialog_;
 	dialog_ = nullptr;
+	spin_ = nullptr;
 }
 
 /*
@@ -191,88 +168,124 @@ void MainFrame::updatePatronNumberOnClick(wxCommandEvent& evt) {
 	Return false if order_placed_ is true, otherwise return true once process is completed once.
 */
 bool MainFrame::hasOrders(int& id) {
-	event_container_.clear();
-	int index = findIndex(id);
-	if (container_.empty()) return false;
-	else if (index == -1) return false;
-	else if (container_[index].s_has_ordered == true) return false;
+	table_order_.clear();
+	int index = findIndexOfTable(id);
+	if (index == -1) return false;
+	else if (restaurant_data_[index].s_has_ordered == true) return false;
 
-	int x = 10;
-	int tempId = 40;
-	wxDialog* dialog = new wxDialog(this, 27, "Order Menu", wxPoint(500, 300), wxSize(720, 400));
-	wxButton* orderButton = new wxButton(dialog, 26, "Confirm", wxPoint(300, 300), wxSize(75, 50));
+	dialog_ = new wxDialog(this, wxID_ANY, "Order Menu", wxPoint(500, 300), wxSize(720, 400));
+	wxButton* orderButton = new wxButton(dialog_, 26, "Confirm", wxPoint(300, 300), wxSize(75, 50));
 	orderButton->Bind(wxEVT_BUTTON, &MainFrame::updateOrdersOnClick, this);
 
-	if (container_[index].s_patrons_sat == 3) {
-		dialog->SetSize(wxSize(540, 400));
+	if (restaurant_data_[index].s_patrons_sat == 3) {
+		dialog_->SetSize(wxSize(540, 400));
 		orderButton->SetSize(wxSize(75, 50));
 		orderButton->SetPosition(wxPoint(200, 300));
 	}
-	else if (container_[index].s_patrons_sat == 2) {
-		dialog->SetSize(wxSize(365, 400));
+	else if (restaurant_data_[index].s_patrons_sat == 2) {
+		dialog_->SetSize(wxSize(365, 400));
 		orderButton->SetSize(wxSize(75, 50));
 		orderButton->SetPosition(wxPoint(140, 300));
 	}
-	else if (container_[index].s_patrons_sat == 1) {
-		dialog->SetSize(wxSize(190, 400));
+	else if (restaurant_data_[index].s_patrons_sat == 1) {
+		dialog_->SetSize(wxSize(190, 400));
 		orderButton->SetSize(wxSize(75, 50));
 		orderButton->SetPosition(wxPoint(40, 300));
 	}
 
-
-	for (int i = 0; i < container_[index].s_patrons_sat; i++) {
-		new wxChoice(dialog, tempId, wxPoint(x, 50), wxDefaultSize,
+	int choiceId = 40;
+	int x = 10;
+	for (int i = 0; i < restaurant_data_[index].s_patrons_sat; i++) {
+		choice_ = new wxChoice(dialog_, choiceId, wxPoint(x, 50), wxDefaultSize,
 			{ "Seafood", "Meat", "Combination" }, 0L, wxDefaultValidator, "Choose category of dishes");
-		choice_ = (wxChoice*)this->FindWindowById(tempId);
 		choice_->Bind(wxEVT_CHOICE, &MainFrame::createOptionsOnClick, this);
 		x += 175;
-		tempId++;
+		choiceId++;
 	}
 
 	// if updateOrdersOnClick ends abruptly and all orders were not selected for number of patrons sat, return false
-	if (dialog->ShowModal() != wxID_OK) {
-		if (event_container_.size() == container_[index].s_patrons_sat) {
-			container_[index].s_order = event_container_;
-			container_[index].s_has_ordered = true;
+	if (dialog_->ShowModal() != wxID_OK) {
+		if (table_order_.size() == restaurant_data_[index].s_patrons_sat) {
+			restaurant_data_[index].s_order = table_order_;
+			restaurant_data_[index].s_has_ordered = true;
 		}
 		else {
-			delete dialog;
-			dialog = nullptr;
+			delete dialog_;
+			dialog_ = nullptr;
 			return false;
+			listbox_ = nullptr;
+			choice_ = nullptr;
 		}
 	}
 	return true;
 }
 
 /*
+	Event that creates ptrs pointing to exisitng controls within mainframe
+	Creates lixBoxes tied to eventId of the choicebox, where strings are retrived from respective arrays
+	terminates window whenver user selects new category of food, instantiating a new window right after, reflecting choice
+*/
+void MainFrame::createOptionsOnClick(wxCommandEvent& evt) {
+	choice_ = (wxChoice*)this->FindWindowById(evt.GetId());
+	int listboxId = evt.GetId() + 5;
+	wxArrayString choices = {};
+
+	if (choice_->GetSelection() == 0) {
+		if (this->FindWindowById(listboxId) != NULL) this->FindWindowById(listboxId)->Destroy();
+		choices.Clear();
+		for (auto it = seafood_.begin(); it != seafood_.end(); ++it) {
+			choices.push_back(it->first);
+		}
+		listbox_ = new wxListBox(dialog_, listboxId, wxPoint(choice_->GetPosition().x, 150), wxDefaultSize, choices);
+	}
+	else if (choice_->GetSelection() == 1) {
+		if (this->FindWindowById(listboxId) != NULL) this->FindWindowById(listboxId)->Destroy();
+		choices.Clear();
+		for (auto it = meat_.begin(); it != meat_.end(); ++it) {
+			choices.push_back(it->first);
+		}
+		listbox_ = new wxListBox(dialog_, listboxId, wxPoint(choice_->GetPosition().x, 150), wxDefaultSize, choices);
+	}
+	else if (choice_->GetSelection() == 2) {
+		if (this->FindWindowById(listboxId) != NULL) this->FindWindowById(listboxId)->Destroy();
+		choices.Clear();
+		for (auto it = combination_.begin(); it != combination_.end(); ++it) {
+			choices.push_back(it->first);
+		}
+		listbox_ = new wxListBox(dialog_, listboxId, wxPoint(choice_->GetPosition().x, 150), wxDefaultSize, choices);
+	}
+}
+
+/*
 	Event that creates ptrs pointing to exisitng controls within mainframe, but event tied to "Confirm" button.
 	Loop will run for how many listboxes were created, and retrieve string selection of said listbox (excluding "")
-	If size of event_container_ does not match num_of_patrons_, container is cleared and event will restart when button is clicked.
+	If size of table_order_ does not match num_of_patrons_, container is cleared and event will restart when button is clicked.
 	Once matched, modal will end, activates rest of AddOrderOfPatrons()
 */
 void MainFrame::updateOrdersOnClick(wxCommandEvent& evt) {
-	dialog_ = (wxDialog*)this->FindWindowById(27);
-	int tempID = 45;
+	int listboxID = 45;
 	int size = 0;
-	listbox_ = (wxListBox*)this->FindWindowById(tempID);
+	listbox_ = (wxListBox*)this->FindWindowById(listboxID);
 	while (listbox_ != nullptr) {
-		if (listbox_->GetStringSelection() != "") {//BUG: if no choice is selected, and you press confirm, error thrown (RESOLVED)
-			event_container_.Add(listbox_->GetStringSelection());
+		if (listbox_->GetStringSelection() != "") {
+			table_order_.Add(listbox_->GetStringSelection());
 		}
-		tempID++;
+		listboxID++;
 		size++;
-		listbox_ = (wxListBox*)this->FindWindowById(tempID);
+		listbox_ = (wxListBox*)this->FindWindowById(listboxID);
 	}
 
-	if (event_container_.size() != size) {
+	if (table_order_.size() != size) {
 		wxLogStatus("All orders were not selected for the number of patrons present. Try again");
-		event_container_.clear();
+		table_order_.clear();
 	}
-	else if (event_container_.size() == size) {
+	else if (table_order_.size() == size) {
 		updateCountOfDishes(); //updates the number of times a dishes has been ordered this session
 		dialog_->EndModal(0);
 		delete dialog_;
 		dialog_ = nullptr;
+		listbox_ = nullptr;
+		choice_ = nullptr;
 	}
 }
 
@@ -289,30 +302,26 @@ void MainFrame::updateCountOfDishes() {
 	choice_ = (wxChoice*)this->FindWindowById(choiceId);
 	listbox_ = (wxListBox*)this->FindWindowById(listId);
 	while (choice_ != nullptr) {
-		int index = 0;
 		if (choice_->GetSelection() == 0) {
-			for (auto it = seafood_[0].s_array.begin(); it != seafood_[0].s_array.end(); ++it) {
-				if(listbox_ != nullptr)
-					if (*it == listbox_->GetStringSelection()) break;
-				index++;
+			if (listbox_ != nullptr) {
+				if (seafood_.find(listbox_->GetStringSelection()) != seafood_.end()) {
+					seafood_.find(listbox_->GetStringSelection())->second += 1;
+				}
 			}
-			seafood_[0].s_count[index] = seafood_[0].s_count[index] + 1;
 		}
-		if (choice_->GetSelection() == 1) {
-			for (auto it = meat_[0].s_array.begin(); it != meat_[0].s_array.end(); ++it) {
-				if (listbox_ != nullptr)
-					if (*it == listbox_->GetStringSelection()) break;
-				index++;
+		else if (choice_->GetSelection() == 1) {
+			if (listbox_ != nullptr) {
+				if (meat_.find(listbox_->GetStringSelection()) != meat_.end()) {
+					meat_.find(listbox_->GetStringSelection())->second += 1;
+				}
 			}
-			meat_[0].s_count[index] = meat_[0].s_count[index] + 1;
 		}
-		if (choice_->GetSelection() == 2) {
-			for (auto it = combination_[0].s_array.begin(); it != combination_[0].s_array.end(); ++it) {
-				if (listbox_ != nullptr)
-					if (*it == listbox_->GetStringSelection()) break;
-				index++;
+		else if (choice_->GetSelection() == 2) {
+			if (listbox_ != nullptr) {
+				if (combination_.find(listbox_->GetStringSelection()) != combination_.end()) {
+					combination_.find(listbox_->GetStringSelection())->second += 1;
+				}
 			}
-			combination_[0].s_count[index] = combination_[0].s_count[index] + 1;
 		}
 		choiceId++;
 		listId++;
@@ -322,37 +331,13 @@ void MainFrame::updateCountOfDishes() {
 }
 
 /*
-	Event that creates ptrs pointing to exisitng controls within mainframe
-	Creates lixBoxes tied to eventId of the choicebox, where strings are retrived from respective arrays
-	terminates window whenver user selects new category of food, instantiating a new window right after, reflecting choice
-*/
-void MainFrame::createOptionsOnClick(wxCommandEvent& evt) {
-	choice_ = (wxChoice*)this->FindWindowById(evt.GetId());
-	int tempId = evt.GetId() + 5;
-	dialog_ = (wxDialog*)this->FindWindowById(27);
-
-	if (choice_->GetSelection() == 0) {
-		if (this->FindWindowById(tempId) != NULL) this->FindWindowById(tempId)->Destroy();
-		listbox_ = new wxListBox(dialog_, tempId, wxPoint(choice_->GetPosition().x, 150), wxDefaultSize, seafood_[0].s_array);
-	}
-	else if (choice_->GetSelection() == 1) {
-		if (this->FindWindowById(tempId) != NULL) this->FindWindowById(tempId)->Destroy();
-		listbox_ = new wxListBox(dialog_, tempId, wxPoint(choice_->GetPosition().x, 150), wxDefaultSize, meat_[0].s_array);
-	}
-	else if (choice_->GetSelection() == 2) {
-		if (this->FindWindowById(tempId) != NULL) this->FindWindowById(tempId)->Destroy();
-		listbox_ = new wxListBox(dialog_, tempId, wxPoint(choice_->GetPosition().x, 150), wxDefaultSize, combination_[0].s_array);
-	}
-}
-
-/*
 	Event that activates when double clicking selection of listbox. A modal will pop up, asking the user if the food has been served. If yes, 
 	we will set the param s_food_served to true, which is linked by ID, and destroy the listbox, rearranging the UI upon deletion. The table
 	color gets updated accordingly on createButtons(). 
 */
 void MainFrame::onListBoxClicked(wxCommandEvent& evt) {
-	int listboxID = evt.GetId();
-	listbox_ = (wxListBox*)this->FindWindowById(listboxID);
+	int tableID = evt.GetId();
+	listbox_ = (wxListBox*)this->FindWindowById(tableID);
 	dialog_ = new wxDialog(this, 27, "Action Menu", wxPoint(500, 300), wxDefaultSize);
 	wxStaticText* text = new wxStaticText(dialog_, wxID_ANY, "Has the food been served?", wxPoint(125, 100));
 	wxButton* confirmButton = new wxButton(dialog_, wxID_ANY, "Yes", wxPoint(50, 150), wxSize(100, 50));
@@ -361,16 +346,18 @@ void MainFrame::onListBoxClicked(wxCommandEvent& evt) {
 	rejectionButton->Bind(wxEVT_BUTTON, &MainFrame::updateCurrentOrderStatusOnClick, this);
 
 	if (dialog_->ShowModal() != wxID_OK) {
-		if (container_[findIndex(listboxID)].s_food_served == true) {
+		if (restaurant_data_[findIndexOfTable(tableID)].s_food_served == true) {
 			this->GetChildren()[0]->DestroyChildren();
 			createListBox(this->GetChildren()[0]); //first panel
 			delete dialog_;
 			dialog_ = nullptr;
+			listbox_ = nullptr;
 			wxLogStatus("Food has been served! The new color of the table on switch is red");
 		}
 		else {
 			delete dialog_;
 			dialog_ = nullptr;
+			listbox_ = nullptr;
 			wxLogStatus("s_food_served was not true or listbox_ was nullptr");
 		}
 	}
@@ -383,8 +370,8 @@ void MainFrame::onListBoxClicked(wxCommandEvent& evt) {
 void MainFrame::updateCurrentOrderStatusOnClick(wxCommandEvent& evt) {
 	if (this->FindWindowById(evt.GetId())->GetLabel() == "Yes") {
 		if (listbox_ != nullptr) {
-			int listboxID = listbox_->GetId();
-			container_[findIndex(listboxID)].s_food_served = true;
+			int tableID = listbox_->GetId();
+			restaurant_data_[findIndexOfTable(tableID)].s_food_served = true;
 			dialog_->EndModal(0);
 		}
 	}
@@ -441,17 +428,18 @@ void MainFrame::onButtonClick(wxCommandEvent& evt) {
 void MainFrame::onSettingClicked(wxCommandEvent& evt) {
 	Hide();
 	Admin* admin = new Admin("login", frame_);
+	if (admin->hasDatabase()) {
+		admin->setDataIntoDatabase(seafood_, meat_, combination_);
+	}
 	admin->Show();
 }
 
 void MainFrame::mainframeOnClose(wxCloseEvent& evt) {
 	Admin* admin = new Admin("", frame_);
 	if (admin->hasDatabase()) {
-		admin->setDataIntoDatabase(getSeafoodCount(), getMeatCount(), getCombinationCount());
-		this->Destroy(); //again bad use(unsure why Close() doesn't work), but closes window completely
+		admin->setDataIntoDatabase(seafood_, meat_, combination_);
 	}
-	else {
-		admin->Destroy();
-		this->Destroy();
-	}
+	admin->Destroy();
+	this->Destroy();
+
 }

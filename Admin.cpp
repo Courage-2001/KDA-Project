@@ -63,9 +63,9 @@ bool Admin::hasDatabase() {
 */
 void Admin::displayDataFromDatabase() {
 	this->GetChildren()[0]->DestroyChildren();
-	std::vector<std::pair<std::string, std::string>> data = { {"Lobster", ""}, {"Crab", ""}, {"Seabass", ""}, {"Tuna", ""}, {"Scallops", ""},
-																   {"Steak", ""}, {"Veal", ""}, {"Chicken", ""}, {"Lamb", ""}, {"Porkchops", ""},
-																   {"Stk & Lx", ""}, {"Surf & Turf", ""}, {"Ch & Stk", ""}, {"Sh over Ling", ""}, {"Stk with Sh", ""} };
+	std::vector<std::pair<std::string, std::string>> data = { {"Crab", ""}, {"Lobster", ""}, {"Scallops", ""}, {"Seabass", ""}, {"Tuna", ""},
+																   {"Chicken", ""}, {"Lamb", ""}, {"Porkchops", ""}, {"Steak", ""}, {"Veal", ""},
+																   {"Ch & Stk", ""}, {"Sh over Ling", ""}, {"Stk & Lx", ""}, {"Stk with Sh", ""}, {"Surf & Turf", ""} };
 	std::ifstream database("Database.txt");
 	std::string num = "";
 	int line = 1;
@@ -108,7 +108,7 @@ void Admin::displayDataFromDatabase() {
 	the entry gets updated as normal. For strings of length 1, the value stored in *it is converted to ASCII with std::stoi, 
 	so we subtract by '0' to retrieve the original integer value and perform the math as normal from there. 
 */
-std::string Admin::updateDataOfDishes(const std::string& line, const std::vector<int>& seafood_count, const std::vector<int>& meat_count, const std::vector<int>& combination_count) {
+std::string Admin::updateDataOfDishes(const std::string& line, std::map<wxString, int>& seafood_count, std::map<wxString, int>& meat_count, std::map<wxString, int>& combination_count) {
 	std::string data = "";
 	int size = 0;
 	auto seafood = seafood_count.begin();
@@ -120,28 +120,34 @@ std::string Admin::updateDataOfDishes(const std::string& line, const std::vector
 			if (*it == ' ') {
 				if (seafood != seafood_count.end()) {
 					if (line.substr(it - line.begin() - size, size).length() >= 2) {
-						num = std::stoi(line.substr(it - line.begin() - size, size)) + *seafood;
+						num = std::stoi(line.substr(it - line.begin() - size, size)) + seafood->second;
+						seafood->second = 0;
 					}
 					else {
-						num = std::stoi(line.substr(it - line.begin() - size, size)) - '0' + *seafood;
+						num = std::stoi(line.substr(it - line.begin() - size, size)) - '0' + seafood->second;
+						seafood->second = 0;
 					}
 					++seafood;
 				}
 				else if (meat != meat_count.end()) {
 					if (line.substr(it - line.begin() - size, size).length() >= 2) {
-						num = std::stoi(line.substr(it - line.begin() - size, size)) + *meat;
+						num = std::stoi(line.substr(it - line.begin() - size, size)) + meat->second;
+						meat->second = 0;
 					}
 					else {
-						num = std::stoi(line.substr(it - line.begin() - size, size)) - '0' + *meat;
+						num = std::stoi(line.substr(it - line.begin() - size, size)) - '0' + meat->second;
+						meat->second = 0;
 					}
 					++meat;
 				}
 				else if (combination != combination_count.end()) {
 					if (line.substr(it - line.begin() - size, size).length() >= 2) {
-						num = std::stoi(line.substr(it - line.begin() - size, size)) + *combination;
+						num = std::stoi(line.substr(it - line.begin() - size, size)) + combination->second;
+						combination->second = 0;
 					}
 					else {
-						num = std::stoi(line.substr(it - line.begin() - size, size)) - '0' + *combination;
+						num = std::stoi(line.substr(it - line.begin() - size, size)) - '0' + combination->second;
+						combination->second = 0;
 					}
 					++combination;
 				}
@@ -155,15 +161,18 @@ std::string Admin::updateDataOfDishes(const std::string& line, const std::vector
 	// initial database initialization
 	else if (line == "") {
 		while (seafood != seafood_count.end()) {
-			data += std::to_string(*seafood) + " ";
+			data += std::to_string(seafood->second) + " ";
+			seafood->second = 0;
 			++seafood;
 		}
 		while (meat != seafood_count.end()) {
-			data += std::to_string(*meat) + " ";
+			data += std::to_string(meat->second) + " ";
+			meat->second = 0;
 			++meat;
 		}
 		while (combination != seafood_count.end()) {
-			data += std::to_string(*combination) + " ";
+			data += std::to_string(combination->second) + " ";
+			combination->second = 0;
 			++combination;
 		}
 		return data;
@@ -176,7 +185,7 @@ std::string Admin::updateDataOfDishes(const std::string& line, const std::vector
 	of order that have taken place in the database (text file). Takes into account whether or not it is user's first time updating
 	the database or updating existing database with new values to be added to existing entries. 
 */
-void Admin::setDataIntoDatabase(const std::vector<int>& seafood_count, const std::vector<int>& meat_count, const std::vector<int>& combination_count) {
+void Admin::setDataIntoDatabase(std::map<wxString, int>& seafood_count, std::map<wxString, int>& meat_count, std::map<wxString, int>& combination_count) {
 	std::vector<std::string> database = {}; // highly ineffcient but the method will work for now
 	std::ifstream database_copy;
 	database_copy.open("Database.txt");
@@ -206,7 +215,6 @@ void Admin::setDataIntoDatabase(const std::vector<int>& seafood_count, const std
 		overwrite_database << std::endl;
 		overwrite_database.close();
 	}
-	this->Destroy(); //since we invoked the constructor in MainFrame, we destroy (at least i think for mem safety)
 }
 
 /*
