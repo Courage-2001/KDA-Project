@@ -70,13 +70,13 @@ void MainFrame::createListBox(wxWindow* panel) {
 		  (where ID of 2 represents table 1 , ID of 3 is table 2, and so on because numbers 0 & 1 are offlimits for framework)
 */
 void MainFrame::createButtons(wxWindow* panel) {
-	int id = 2;
+	int tableID = 2;
 	int x = 150;
 	int y = 100;
 	int index = 0;
 	for (int i = 0; i < 15; i++) {
-		wxButton* table = new wxButton(panel, id, "", wxPoint(x, y), wxSize(75, 75));
-		index = findIndexOfTable(id);
+		wxButton* table = new wxButton(panel, tableID, "", wxPoint(x, y), wxSize(75, 75));
+		index = findIndexOfTable(tableID);
 
 		if (index != -1) {
 			if (restaurant_data_[index].s_food_served == true) {
@@ -94,7 +94,7 @@ void MainFrame::createButtons(wxWindow* panel) {
 		}
 
 		table->Bind(wxEVT_BUTTON, &MainFrame::onButtonClick, this);
-		id++;
+		tableID++;
 		y += 120;
 		if (y == 700) {
 			x += 150;
@@ -102,18 +102,6 @@ void MainFrame::createButtons(wxWindow* panel) {
 		}
 		if (i == 14) table = nullptr;
 	}
-}
-
-std::map<wxString, int> MainFrame::getSeafoodCount() const {
-	return seafood_;
-}
-
-std::map<wxString, int> MainFrame::getMeatCount() const {
-	return meat_;
-}
-
-std::map<wxString, int> MainFrame::getCombinationCount() const {
-	return combination_;
 }
 
 int MainFrame::findIndexOfTable(int& id) const {
@@ -440,17 +428,18 @@ void MainFrame::onButtonClick(wxCommandEvent& evt) {
 void MainFrame::onSettingClicked(wxCommandEvent& evt) {
 	Hide();
 	Admin* admin = new Admin("login", frame_);
+	if (admin->hasDatabase()) {
+		admin->setDataIntoDatabase(seafood_, meat_, combination_);
+	}
 	admin->Show();
 }
 
 void MainFrame::mainframeOnClose(wxCloseEvent& evt) {
 	Admin* admin = new Admin("", frame_);
 	if (admin->hasDatabase()) {
-		admin->setDataIntoDatabase(getSeafoodCount(), getMeatCount(), getCombinationCount());
-		this->Destroy(); //again bad use(unsure why Close() doesn't work), but closes window completely
+		admin->setDataIntoDatabase(seafood_, meat_, combination_);
 	}
-	else {
-		admin->Destroy();
-		this->Destroy();
-	}
+	admin->Destroy();
+	this->Destroy();
+
 }

@@ -23,9 +23,6 @@ public:
 	bool hasPatrons(int& id);
 	bool hasOrders(int& id);
 	int findIndexOfTable(int& id) const;
-	std::map<wxString, int> getSeafoodCount() const;
-	std::map<wxString, int> getMeatCount() const;
-	std::map<wxString, int> getCombinationCount() const;
 	void updateCountOfDishes();
 	void onButtonClick(wxCommandEvent& evt);
 	void switchButtonClicked(wxCommandEvent& evt);
