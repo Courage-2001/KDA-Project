@@ -29,8 +29,7 @@ public:
 	void createListBox(wxWindow* panel);
 	bool hasPatrons(int& id);
 	bool hasOrders(int& id);
-	int findIndex(int& id) const;
-	std::vector<TableData> getContainer() const;
+	int findIndexOfTable(int& id) const;
 	std::vector<int> getSeafoodCount() const;
 	std::vector<int> getMeatCount() const;
 	std::vector<int> getCombinationCount() const;
@@ -47,8 +46,8 @@ public:
 
 private:
 	int num_patrons_;
-	wxArrayString event_container_;
-	std::vector<TableData> container_;
+	wxArrayString table_order_;
+	std::vector<TableData> restaurant_data_;
 	wxFrame* frame_;
 	wxListBox* listbox_;
 	wxChoice* choice_;
