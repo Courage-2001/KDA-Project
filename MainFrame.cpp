@@ -16,9 +16,10 @@ MainFrame::MainFrame(const wxString& title) : wxFrame(nullptr, wxID_ANY, title) 
 	spin_ = nullptr;
 	dialog_ = nullptr;
 	hasLogin_ = false;
-	seafood_ = { {"Lobster", 0}, {"Crab", 0}, {"Seabass", 0}, {"Tuna", 0}, {"Scallops", 0} };
-	meat_ = { {"Steak",0}, {"Veal",0}, {"Chicken",0}, {"Lamb",0}, {"Porkchops",0} };
-	combination_ = { {"Steak and Lobster",0}, {"Surf and Turf",0}, {"Chicken and Steak",0}, {"Shrimp over Linguini",0}, {"Steak with Shrimp",0} };
+	seafood_ = { {"Crab", {0, "Shellfish"}}, {"Lobster", {0, "Shellfish"}}, {"Scallops", {0, "Shellfish"}}, {"Seabass", {0, "Fish"}}, {"Tuna", {0, "Fish"}} };
+	meat_ = { {"Chicken",{0, "Poultry"}}, {"Lamb",{0, "Mutton"}}, {"Porkchops",{0, "Pork"}}, {"Steak",{0, "Beef"}}, {"Veal",{0, "Beef"}} };
+	combination_ = { {"Chicken and Steak",{0, "Beef&Poultry"}}, {"Shrimp over Linguini",{0, "Shellfish&Pasta"}}, 
+		{"Steak and Lobster",{0, "Beef&Shellfish"}}, {"Steak with Shrimp",{0, "Beef&Shellfish"}}, {"Surf and Turf",{0, "Beef&Shellfish"}} };
 
 
 	wxPanel* firstPanel = new wxPanel(this, wxID_ANY, wxPoint(0, 0), wxSize(800, 800));
@@ -237,6 +238,7 @@ void MainFrame::createOptionsOnClick(wxCommandEvent& evt) {
 			choices.push_back(it->first);
 		}
 		listbox_ = new wxListBox(dialog_, listboxId, wxPoint(choice_->GetPosition().x, 150), wxDefaultSize, choices);
+		listbox_->Bind(wxEVT_LISTBOX, &MainFrame::createSubOptionsOnSelection, this);
 	}
 	else if (choice_->GetSelection() == 1) {
 		if (this->FindWindowById(listboxId) != NULL) this->FindWindowById(listboxId)->Destroy();
@@ -245,6 +247,7 @@ void MainFrame::createOptionsOnClick(wxCommandEvent& evt) {
 			choices.push_back(it->first);
 		}
 		listbox_ = new wxListBox(dialog_, listboxId, wxPoint(choice_->GetPosition().x, 150), wxDefaultSize, choices);
+		listbox_->Bind(wxEVT_LISTBOX, &MainFrame::createSubOptionsOnSelection, this);
 	}
 	else if (choice_->GetSelection() == 2) {
 		if (this->FindWindowById(listboxId) != NULL) this->FindWindowById(listboxId)->Destroy();
@@ -253,6 +256,21 @@ void MainFrame::createOptionsOnClick(wxCommandEvent& evt) {
 			choices.push_back(it->first);
 		}
 		listbox_ = new wxListBox(dialog_, listboxId, wxPoint(choice_->GetPosition().x, 150), wxDefaultSize, choices);
+		listbox_->Bind(wxEVT_LISTBOX, &MainFrame::createSubOptionsOnSelection, this);
+	}
+}
+
+// Id of choice is always 5 behind the listbox Id during the modal window of taking orders
+void MainFrame::createSubOptionsOnSelection(wxCommandEvent& evt) {
+	listbox_ = (wxListBox*)this->FindWindowById(evt.GetId());
+	choice_ = (wxChoice*)this->FindWindowById(evt.GetId() - 5);
+	if (choice_->GetSelection() == 1) {
+		if (meat_.find(listbox_->GetStringSelection())->second.s_dish_type == "Beef") {
+			wxLogStatus("Beef");
+		}
+		else {
+			wxLogStatus("Not beef");
+		}
 	}
 }
 
@@ -305,21 +323,21 @@ void MainFrame::updateCountOfDishes() {
 		if (choice_->GetSelection() == 0) {
 			if (listbox_ != nullptr) {
 				if (seafood_.find(listbox_->GetStringSelection()) != seafood_.end()) {
-					seafood_.find(listbox_->GetStringSelection())->second += 1;
+					seafood_.find(listbox_->GetStringSelection())->second.s_dish_count += 1;
 				}
 			}
 		}
 		else if (choice_->GetSelection() == 1) {
 			if (listbox_ != nullptr) {
 				if (meat_.find(listbox_->GetStringSelection()) != meat_.end()) {
-					meat_.find(listbox_->GetStringSelection())->second += 1;
+					meat_.find(listbox_->GetStringSelection())->second.s_dish_count += 1;
 				}
 			}
 		}
 		else if (choice_->GetSelection() == 2) {
 			if (listbox_ != nullptr) {
 				if (combination_.find(listbox_->GetStringSelection()) != combination_.end()) {
-					combination_.find(listbox_->GetStringSelection())->second += 1;
+					combination_.find(listbox_->GetStringSelection())->second.s_dish_count += 1;
 				}
 			}
 		}
@@ -429,7 +447,7 @@ void MainFrame::onSettingClicked(wxCommandEvent& evt) {
 	Hide();
 	Admin* admin = new Admin("login", frame_);
 	if (admin->hasDatabase()) {
-		admin->setDataIntoDatabase(seafood_, meat_, combination_);
+		setDataIntoDatabase(seafood_, meat_, combination_);
 	}
 	admin->Show();
 }
@@ -437,9 +455,125 @@ void MainFrame::onSettingClicked(wxCommandEvent& evt) {
 void MainFrame::mainframeOnClose(wxCloseEvent& evt) {
 	Admin* admin = new Admin("", frame_);
 	if (admin->hasDatabase()) {
-		admin->setDataIntoDatabase(seafood_, meat_, combination_);
+		setDataIntoDatabase(seafood_, meat_, combination_);
 	}
 	admin->Destroy();
 	this->Destroy();
 
+}
+
+/*
+	Function that will update line 3 of database if it exist, or initialize line 3 for the first time and return a string
+	that will be used in overwriting Database.txt.
+	If line 3 exist of database, it will perform the appropriate math based on the length of string. For length 2 and greater,
+	the entry gets updated as normal. For strings of length 1, the value stored in *it is converted to ASCII with std::stoi,
+	so we subtract by '0' to retrieve the original integer value and perform the math as normal from there.
+*/
+std::string MainFrame::updateDataOfDishes(const std::string& line, std::unordered_map<wxString, DishData>& seafood_count, std::unordered_map<wxString, DishData>& meat_count, std::unordered_map<wxString, DishData>& combination_count) {
+	std::string data = "";
+	int size = 0;
+	auto seafood = seafood_count.begin();
+	auto meat = meat_count.begin();
+	auto combination = combination_count.begin();
+	if (line != "") {
+		for (auto it = line.begin(); it != line.end(); ++it) {
+			int num = 0;
+			if (*it == ' ') {
+				if (seafood != seafood_count.end()) {
+					if (line.substr(it - line.begin() - size, size).length() >= 2) {
+						num = std::stoi(line.substr(it - line.begin() - size, size)) + seafood->second.s_dish_count;
+						seafood->second.s_dish_count = 0;
+					}
+					else {
+						num = std::stoi(line.substr(it - line.begin() - size, size)) - '0' + seafood->second.s_dish_count;
+						seafood->second.s_dish_count = 0;
+					}
+					++seafood;
+				}
+				else if (meat != meat_count.end()) {
+					if (line.substr(it - line.begin() - size, size).length() >= 2) {
+						num = std::stoi(line.substr(it - line.begin() - size, size)) + meat->second.s_dish_count;
+						meat->second.s_dish_count = 0;
+					}
+					else {
+						num = std::stoi(line.substr(it - line.begin() - size, size)) - '0' + meat->second.s_dish_count;
+						meat->second.s_dish_count = 0;
+					}
+					++meat;
+				}
+				else if (combination != combination_count.end()) {
+					if (line.substr(it - line.begin() - size, size).length() >= 2) {
+						num = std::stoi(line.substr(it - line.begin() - size, size)) + combination->second.s_dish_count;
+						combination->second.s_dish_count = 0;
+					}
+					else {
+						num = std::stoi(line.substr(it - line.begin() - size, size)) - '0' + combination->second.s_dish_count;
+						combination->second.s_dish_count = 0;
+					}
+					++combination;
+				}
+				data += std::to_string(num) + " ";
+				size = 0;
+			}
+			size++;
+		}
+		return data;
+	}
+	// initial database initialization
+	else if (line == "") {
+		while (seafood != seafood_count.end()) {
+			data += std::to_string(seafood->second.s_dish_count) + " ";
+			seafood->second.s_dish_count = 0;
+			++seafood;
+		}
+		while (meat != seafood_count.end()) {
+			data += std::to_string(meat->second.s_dish_count) + " ";
+			meat->second.s_dish_count = 0;
+			++meat;
+		}
+		while (combination != seafood_count.end()) {
+			data += std::to_string(combination->second.s_dish_count) + " ";
+			combination->second.s_dish_count = 0;
+			++combination;
+		}
+		return data;
+	}
+	return "";
+}
+
+/*
+	Function that is called in MainFrame.cpp on window close, where we take the vectors of dishes count, and update the amount
+	of order that have taken place in the database (text file). Takes into account whether or not it is user's first time updating
+	the database or updating existing database with new values to be added to existing entries.
+*/
+void MainFrame::setDataIntoDatabase(std::unordered_map<wxString, DishData>& seafood_count, std::unordered_map<wxString, DishData>& meat_count, std::unordered_map<wxString, DishData>& combination_count) {
+	std::vector<std::string> database = {}; // highly ineffcient but the method will work for now
+	std::ifstream database_copy;
+	database_copy.open("Database.txt");
+	if (database_copy.is_open()) {
+		std::string line = "";
+		while (std::getline(database_copy, line)) {
+			database.push_back(line);
+		}
+		database_copy.close();
+	}
+	// represents the new data to be inserted in the database (either overwriting or initialization)
+	std::string data = "";
+	if (database.size() == 3) {
+		data = updateDataOfDishes(database[2], seafood_count, meat_count, combination_count);
+		database.pop_back(); // removes the last line that will be overwritten (if exist)
+	}
+	else if (database.size() == 2) {
+		data = updateDataOfDishes("", seafood_count, meat_count, combination_count);
+	}
+
+	std::ofstream overwrite_database("Database.txt");
+	if (overwrite_database.is_open()) {
+		for (auto it = database.begin(); it != database.end(); ++it) {
+			overwrite_database << *it << std::endl;
+		}
+		overwrite_database << data;
+		overwrite_database << std::endl;
+		overwrite_database.close();
+	}
 }
