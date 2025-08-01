@@ -8,6 +8,7 @@ MainFrame::MainFrame(const wxString& title) : wxFrame(nullptr, wxID_ANY, title) 
 	Center();
 	Show();
 	num_patrons_ = 0;
+	cur_table_index_ = -1;
 	table_order_ = {};
 	restaurant_data_ = {};
 	frame_ = this; //initialize frame_ to point to MainFrame to pass as a param into admin constructor
@@ -16,10 +17,10 @@ MainFrame::MainFrame(const wxString& title) : wxFrame(nullptr, wxID_ANY, title) 
 	spin_ = nullptr;
 	dialog_ = nullptr;
 	hasLogin_ = false;
-	seafood_ = { {"Crab", {0, "Shellfish"}}, {"Lobster", {0, "Shellfish"}}, {"Scallops", {0, "Shellfish"}}, {"Seabass", {0, "Fish"}}, {"Tuna", {0, "Fish"}} };
-	meat_ = { {"Chicken",{0, "Poultry"}}, {"Lamb",{0, "Mutton"}}, {"Porkchops",{0, "Pork"}}, {"Steak",{0, "Beef"}}, {"Veal",{0, "Beef"}} };
-	combination_ = { {"Chicken and Steak",{0, "Beef&Poultry"}}, {"Shrimp over Linguini",{0, "Shellfish&Pasta"}}, 
-		{"Steak and Lobster",{0, "Beef&Shellfish"}}, {"Steak with Shrimp",{0, "Beef&Shellfish"}}, {"Surf and Turf",{0, "Beef&Shellfish"}} };
+	seafood_ = { {"Crab", {0, "Shellfish", false}}, {"Lobster", {0, "Shellfish", true}}, {"Scallops", {0, "Shellfish", false}}, {"Seabass", {0, "Fish", false}}, {"Tuna", {0, "Fish", false}} };
+	meat_ = { {"Chicken",{0, "Poultry", false}}, {"Lamb",{0, "Mutton", false}}, {"Porkchops",{0, "Pork", false}}, {"Steak",{0, "Beef", true}}, {"Veal",{0, "Beef", false}} };
+	combination_ = { {"Chicken and Steak",{0, "Beef&Poultry", true}}, {"Shrimp over Linguini",{0, "Shellfish&Pasta", false}}, 
+		{"Steak and Lobster",{0, "Beef&Shellfish", true}}, {"Steak with Shrimp",{0, "Beef&Shellfish", true}}, {"Surf and Turf",{0, "Beef&Shellfish", true}} };
 
 
 	wxPanel* firstPanel = new wxPanel(this, wxID_ANY, wxPoint(0, 0), wxSize(800, 800));
@@ -120,9 +121,9 @@ int MainFrame::findIndexOfTable(int& id) const {
 // Returns false if s_has_people is true OR if num_patrons = 0, otherwise return true once process is completed once.
 bool MainFrame::hasPatrons(int& id) {
 	num_patrons_ = 0;
-	int index = findIndexOfTable(id);
-	if(index != -1)
-		if (restaurant_data_[index].s_has_people == true) return false;
+	cur_table_index_ = findIndexOfTable(id);
+	if(cur_table_index_ != -1)
+		if (restaurant_data_[cur_table_index_].s_has_people == true) return false;
 
 	dialog_ = new wxDialog(this, wxID_ANY, "Enter how many patrons are being sat", wxPoint(500, 300), wxDefaultSize);
 	wxButton* button = new wxButton(dialog_, wxID_ANY, "Confirm", wxPoint(150, 100), wxSize(75, 50));
@@ -170,45 +171,44 @@ void MainFrame::updatePatronNumberOnClick(wxCommandEvent& evt) {
 */
 bool MainFrame::hasOrders(int& id) {
 	table_order_.clear();
-	int index = findIndexOfTable(id);
-	if (index == -1) return false;
-	else if (restaurant_data_[index].s_has_ordered == true) return false;
+	cur_table_index_ = findIndexOfTable(id);
+	if (cur_table_index_ == -1) return false;
+	else if (restaurant_data_[cur_table_index_].s_has_ordered == true) return false;
 
-	dialog_ = new wxDialog(this, wxID_ANY, "Order Menu", wxPoint(500, 300), wxSize(720, 400));
+	dialog_ = new wxDialog(this, wxID_ANY, "Order Menu", wxPoint(650, 100), wxSize(720, 400)); //edited wxPoint
 	wxButton* orderButton = new wxButton(dialog_, 26, "Confirm", wxPoint(300, 300), wxSize(75, 50));
 	orderButton->Bind(wxEVT_BUTTON, &MainFrame::updateOrdersOnClick, this);
 
-	if (restaurant_data_[index].s_patrons_sat == 3) {
+	if (restaurant_data_[cur_table_index_].s_patrons_sat == 3) {
 		dialog_->SetSize(wxSize(540, 400));
 		orderButton->SetSize(wxSize(75, 50));
 		orderButton->SetPosition(wxPoint(200, 300));
 	}
-	else if (restaurant_data_[index].s_patrons_sat == 2) {
+	else if (restaurant_data_[cur_table_index_].s_patrons_sat == 2) {
 		dialog_->SetSize(wxSize(365, 400));
 		orderButton->SetSize(wxSize(75, 50));
 		orderButton->SetPosition(wxPoint(140, 300));
 	}
-	else if (restaurant_data_[index].s_patrons_sat == 1) {
-		dialog_->SetSize(wxSize(190, 400));
+	else if (restaurant_data_[cur_table_index_].s_patrons_sat == 1) {
+		dialog_->SetSize(wxSize(190, 600)); //edited size (idea would be to change size when conditions met (type of food)
 		orderButton->SetSize(wxSize(75, 50));
-		orderButton->SetPosition(wxPoint(40, 300));
+		orderButton->SetPosition(wxPoint(40, 400)); //changed y from 300 to 400
 	}
 
 	int choiceId = 40;
 	int x = 10;
-	for (int i = 0; i < restaurant_data_[index].s_patrons_sat; i++) {
+	for (int i = 0; i < restaurant_data_[cur_table_index_].s_patrons_sat; i++) {
 		choice_ = new wxChoice(dialog_, choiceId, wxPoint(x, 50), wxDefaultSize,
 			{ "Seafood", "Meat", "Combination" }, 0L, wxDefaultValidator, "Choose category of dishes");
-		choice_->Bind(wxEVT_CHOICE, &MainFrame::createOptionsOnClick, this);
+		choice_->Bind(wxEVT_CHOICE, &MainFrame::createFoodOptionsOnSelection, this);
 		x += 175;
 		choiceId++;
 	}
 
 	// if updateOrdersOnClick ends abruptly and all orders were not selected for number of patrons sat, return false
 	if (dialog_->ShowModal() != wxID_OK) {
-		if (table_order_.size() == restaurant_data_[index].s_patrons_sat) {
-			restaurant_data_[index].s_order = table_order_;
-			restaurant_data_[index].s_has_ordered = true;
+		if (restaurant_data_[cur_table_index_].s_has_ordered == true) {
+			restaurant_data_[cur_table_index_].s_order = table_order_;
 		}
 		else {
 			delete dialog_;
@@ -225,52 +225,111 @@ bool MainFrame::hasOrders(int& id) {
 	Event that creates ptrs pointing to exisitng controls within mainframe
 	Creates lixBoxes tied to eventId of the choicebox, where strings are retrived from respective arrays
 	terminates window whenver user selects new category of food, instantiating a new window right after, reflecting choice
+	*Destroys other windows if it exist unpon selecting new choice
 */
-void MainFrame::createOptionsOnClick(wxCommandEvent& evt) {
+void MainFrame::createFoodOptionsOnSelection(wxCommandEvent& evt) {
 	choice_ = (wxChoice*)this->FindWindowById(evt.GetId());
-	int listboxId = evt.GetId() + 5;
 	wxArrayString choices = {};
+	if (this->FindWindowById(evt.GetId() + 5) != NULL) this->FindWindowById(evt.GetId() + 5)->Destroy();
+	if (this->FindWindowById(evt.GetId() + 10) != NULL) this->FindWindowById(evt.GetId() + 10)->Destroy();
+	if (this->FindWindowById(evt.GetId() + 15) != NULL) this->FindWindowById(evt.GetId() + 15)->Destroy();
 
 	if (choice_->GetSelection() == 0) {
-		if (this->FindWindowById(listboxId) != NULL) this->FindWindowById(listboxId)->Destroy();
 		choices.Clear();
 		for (auto it = seafood_.begin(); it != seafood_.end(); ++it) {
 			choices.push_back(it->first);
 		}
-		listbox_ = new wxListBox(dialog_, listboxId, wxPoint(choice_->GetPosition().x, 150), wxDefaultSize, choices);
-		listbox_->Bind(wxEVT_LISTBOX, &MainFrame::createSubOptionsOnSelection, this);
+		listbox_ = new wxListBox(dialog_, evt.GetId() + 5, wxPoint(choice_->GetPosition().x, 150), wxDefaultSize, choices);
+		wxLogStatus("Seafood options displayed!");
 	}
 	else if (choice_->GetSelection() == 1) {
-		if (this->FindWindowById(listboxId) != NULL) this->FindWindowById(listboxId)->Destroy();
 		choices.Clear();
 		for (auto it = meat_.begin(); it != meat_.end(); ++it) {
 			choices.push_back(it->first);
 		}
-		listbox_ = new wxListBox(dialog_, listboxId, wxPoint(choice_->GetPosition().x, 150), wxDefaultSize, choices);
-		listbox_->Bind(wxEVT_LISTBOX, &MainFrame::createSubOptionsOnSelection, this);
+		listbox_ = new wxListBox(dialog_, evt.GetId() + 5, wxPoint(choice_->GetPosition().x, 150), wxDefaultSize, choices);
+		wxLogStatus("Meat options displayed!");
 	}
 	else if (choice_->GetSelection() == 2) {
-		if (this->FindWindowById(listboxId) != NULL) this->FindWindowById(listboxId)->Destroy();
 		choices.Clear();
 		for (auto it = combination_.begin(); it != combination_.end(); ++it) {
 			choices.push_back(it->first);
 		}
-		listbox_ = new wxListBox(dialog_, listboxId, wxPoint(choice_->GetPosition().x, 150), wxDefaultSize, choices);
-		listbox_->Bind(wxEVT_LISTBOX, &MainFrame::createSubOptionsOnSelection, this);
+		listbox_ = new wxListBox(dialog_, evt.GetId() + 5, wxPoint(choice_->GetPosition().x, 150), wxDefaultSize, choices);
+		wxLogStatus("Combination options displayed!");
 	}
+	listbox_->Bind(wxEVT_LISTBOX, &MainFrame::createOptionsOnSelection, this);
 }
 
 // Id of choice is always 5 behind the listbox Id during the modal window of taking orders
-void MainFrame::createSubOptionsOnSelection(wxCommandEvent& evt) {
+void MainFrame::createOptionsOnSelection(wxCommandEvent& evt) {
 	listbox_ = (wxListBox*)this->FindWindowById(evt.GetId());
 	choice_ = (wxChoice*)this->FindWindowById(evt.GetId() - 5);
-	if (choice_->GetSelection() == 1) {
-		if (meat_.find(listbox_->GetStringSelection())->second.s_dish_type == "Beef") {
-			wxLogStatus("Beef");
+	if (this->FindWindowById(evt.GetId() + 5) != NULL) this->FindWindowById(evt.GetId() + 5)->Destroy();
+	if (this->FindWindowById(evt.GetId() + 10) != NULL) this->FindWindowById(evt.GetId() + 10)->Destroy();
+
+	if (choice_->GetSelection() == 0) {
+		if (seafood_.find(listbox_->GetStringSelection())->second.s_dish_type == "Shellfish" && seafood_.find(listbox_->GetStringSelection())->second.isChoiceMandatory == true) {
+			choice_ = new wxChoice(dialog_, evt.GetId() + 5, wxPoint(listbox_->GetPosition().x, 250), wxDefaultSize,
+				{ "Cooking method", "Other" }, 0L, wxDefaultValidator, "Options");
+			wxLogStatus("Displaying actions needed for lobster");
 		}
-		else {
-			wxLogStatus("Not beef");
+	}
+	else if (choice_->GetSelection() == 1) {
+		if (meat_.find(listbox_->GetStringSelection())->second.s_dish_type == "Beef" && meat_.find(listbox_->GetStringSelection())->second.isChoiceMandatory == true) {
+			choice_ = new wxChoice(dialog_, evt.GetId() + 5, wxPoint(listbox_->GetPosition().x, 250), wxDefaultSize,
+				{ "Temperature", "Other" }, 0L, wxDefaultValidator, "Options");
+			wxLogStatus("Displaying actions needed for steak");
 		}
+	}
+	else {
+		wxLogStatus("Nothing to be done");
+	}
+	choice_->Bind(wxEVT_CHOICE, &MainFrame::createSubOptionsOnSelection, this);
+}
+
+void MainFrame::createSubOptionsOnSelection(wxCommandEvent& evt) {
+	if (this->FindWindowById(evt.GetId() + 5) != NULL) this->FindWindowById(evt.GetId() + 5)->Destroy();
+	choice_ = (wxChoice*)this->FindWindowById(evt.GetId());
+
+	if (choice_->GetStringSelection() == "Temperature") {
+		listbox_ = new wxListBox(dialog_, evt.GetId() + 5, wxPoint(choice_->GetPosition().x, 300), wxDefaultSize, {"Rare", "Medium Rare", "Welldone"});
+		wxLogStatus("Showing options for Temperature");
+	}
+	else if (choice_->GetStringSelection() == "Cooking method") {
+		listbox_ = new wxListBox(dialog_, evt.GetId() + 5, wxPoint(choice_->GetPosition().x, 300), wxDefaultSize, {"Steamed", "Broiled"});
+		wxLogStatus("Showing options for Cooking method");
+	}
+	else if (choice_->GetStringSelection() == "Other") {
+		choice_ = (wxChoice*)this->FindWindowById(evt.GetId() - 10);
+		if (choice_->GetSelection() == 0) {
+			listbox_ = new wxListBox(dialog_, evt.GetId() + 5, wxPoint(choice_->GetPosition().x, 300), wxDefaultSize, {"No butter", "Extra butter", "No lemons", "Extra lemons", "Plain"});
+			wxLogStatus("Options for shellfish displayed");
+		}
+		else if (choice_->GetSelection() == 1) {
+			listbox_ = new wxListBox(dialog_, evt.GetId() + 5, wxPoint(choice_->GetPosition().x, 300), wxDefaultSize, {"No salt", "No butter", "Sliced"});
+			wxLogStatus("Options for beef displayed");
+		}
+	}
+	listbox_->Bind(wxEVT_LISTBOX, &MainFrame::storeOptionsFromSelection, this);
+}
+
+// The original choice id starts at 40, where we only create 3 more controls using increments of 5 on the choice id
+// modulo will return the remainder, which will act as the index of s_options (corresponding to each person)
+void MainFrame::storeOptionsFromSelection(wxCommandEvent& evt) {
+	listbox_ = (wxListBox*)this->FindWindowById(evt.GetId());
+	choice_ = (wxChoice*)this->FindWindowById(evt.GetId() - 5);
+	if (choice_->GetSelection() == 0 && this->FindWindowById(evt.GetId() - 15) != NULL) {
+		int index = evt.GetId() - 15; 
+		index = index % 10;
+		restaurant_data_[cur_table_index_].s_option1[index] = listbox_->GetStringSelection();
+		wxLogStatus("option1 saved");
+	}
+	else if (choice_->GetSelection() == 1 && this->FindWindowById(evt.GetId() - 15) != NULL) {
+		int index = evt.GetId() - 15;
+		index = index % 10;
+		restaurant_data_[cur_table_index_].s_option2[index] = listbox_->GetStringSelection();
+		wxLogStatus("option2 saved");
 	}
 }
 
@@ -282,22 +341,34 @@ void MainFrame::createSubOptionsOnSelection(wxCommandEvent& evt) {
 */
 void MainFrame::updateOrdersOnClick(wxCommandEvent& evt) {
 	int listboxID = 45;
-	int size = 0;
+	int size = 0; //also acts as the index (if listbox is not nullptr, then value matches index of the person's order)
+	int offset = 0;
 	listbox_ = (wxListBox*)this->FindWindowById(listboxID);
 	while (listbox_ != nullptr) {
 		if (listbox_->GetStringSelection() != "") {
-			table_order_.Add(listbox_->GetStringSelection());
+			wxString order = listbox_->GetStringSelection();
+			table_order_.Add(order);
+			if (restaurant_data_[cur_table_index_].s_option1[size] != "") {
+				order = "  -" + restaurant_data_[cur_table_index_].s_option1[size];
+				table_order_.Add(order);
+				offset++;
+			}
+			if (restaurant_data_[cur_table_index_].s_option2[size] != "") {
+				order = "  -" + restaurant_data_[cur_table_index_].s_option2[size];
+				table_order_.Add(order);
+				offset++;
+			}
 		}
 		listboxID++;
 		size++;
 		listbox_ = (wxListBox*)this->FindWindowById(listboxID);
 	}
-
-	if (table_order_.size() != size) {
+	if (table_order_.size() - offset != size) {
 		wxLogStatus("All orders were not selected for the number of patrons present. Try again");
 		table_order_.clear();
 	}
-	else if (table_order_.size() == size) {
+	else if (table_order_.size() - offset == size) {
+		restaurant_data_[cur_table_index_].s_has_ordered = true;
 		updateCountOfDishes(); //updates the number of times a dishes has been ordered this session
 		dialog_->EndModal(0);
 		delete dialog_;

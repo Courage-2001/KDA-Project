@@ -10,6 +10,8 @@ public:
 	struct TableData {
 		int s_table_id = 0;
 		wxArrayString s_order = {};
+		wxArrayString s_option1 = {"", "", "", ""};
+		wxArrayString s_option2 = {"", "", "", ""};
 		int s_patrons_sat = 0;
 		bool s_has_ordered = false;
 		bool s_has_people = false;
@@ -19,6 +21,7 @@ public:
 	struct DishData {
 		int s_dish_count = 0;
 		wxString s_dish_type = "";
+		bool isChoiceMandatory = false;
 	};
 
 	MainFrame(const wxString& title); //wxstring is str implementation of wxwidgets
@@ -33,8 +36,10 @@ public:
 	void onSettingClicked(wxCommandEvent& evt);
 	void onListBoxClicked(wxCommandEvent& evt);
 	void updatePatronNumberOnClick(wxCommandEvent& evt);
-	void createOptionsOnClick(wxCommandEvent& evt);
+	void createFoodOptionsOnSelection(wxCommandEvent& evt);
+	void createOptionsOnSelection(wxCommandEvent& evt);
 	void createSubOptionsOnSelection(wxCommandEvent& evt);
+	void storeOptionsFromSelection(wxCommandEvent& evt);
 	void updateOrdersOnClick(wxCommandEvent& evt);
 	void updateCurrentOrderStatusOnClick(wxCommandEvent& evt);
 	void mainframeOnClose(wxCloseEvent& evt);
@@ -43,6 +48,7 @@ public:
 
 private:
 	int num_patrons_;
+	int cur_table_index_;
 	wxArrayString table_order_;
 	std::vector<TableData> restaurant_data_;
 	wxFrame* frame_;
