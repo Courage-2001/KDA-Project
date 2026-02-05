@@ -142,12 +142,14 @@
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(WXWIN)\include;$(WXWIN)\include\msvc;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(WXWIN)\include;$(WXWIN)\include\msvc;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
-    <ClCompile Include="MainFrame.cpp" />
+    <ClCompile Include="DiningRoom.cpp" />
+    <ClCompile Include="DiningRoomEvents.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Admin.h" />
     <ClInclude Include="App.h" />
-    <ClInclude Include="MainFrame.h" />
+    <ClInclude Include="DiningRoom.h" />
+    <ClInclude Include="WidgetIDs.h" />
   </ItemGroup>
   <ItemGroup>
     <Text Include="Notes.txt" />

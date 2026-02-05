@@ -1,5 +1,5 @@
 #pragma once
-#include "MainFrame.h"
+#include "DiningRoom.h"
 
 class App : public wxApp { //your app must inherit from wxApp (base class i assume)
 public:

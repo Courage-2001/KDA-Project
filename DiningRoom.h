@@ -3,8 +3,9 @@
 #include <wx/spinctrl.h>
 #include <unordered_map>
 #include "Admin.h"
+#include "WidgetIDs.h"
 
-class MainFrame : public wxFrame { //mainframe inherits from wxFrame
+class DiningRoom : public wxFrame { //mainframe inherits from wxFrame
 public:
 
 	struct TableData {
@@ -23,7 +24,7 @@ public:
 		bool isChoiceMandatory = false;
 	};
 
-	MainFrame(const wxString& title); //wxstring is str implementation of wxwidgets
+	DiningRoom(const wxString& title);
 	void createButtons(wxWindow* panel);
 	void createListBox(wxWindow* panel);
 	bool hasPatrons(int& id);
@@ -58,5 +59,6 @@ private:
 	std::unordered_map<wxString, DishData> meat_;
 	std::unordered_map<wxString, DishData> combination_;
 	bool hasLogin_;
+	bool panelFlag;
 };
 

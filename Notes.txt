@@ -12,8 +12,6 @@ IMPORTANT:
 
 ID's being used:
     - ID's 2-16 are being used for Listboxes (orders) and Button (tables)
-    - ID 27 is used to instantiate all dialog control on event
-    - ID 50 is used to instantiate spin control on event
     - ID 40-43 are used on generated choice box(es) when selecting category of food for customer orders
     - ID 26 is used for the confirm button that is generated to confirm selection of orders
     - ID's 45-48 are used to represent listBoxes tied to the ID's of the generated choice boxes (ID + 5)
