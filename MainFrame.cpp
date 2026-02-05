@@ -9,7 +9,6 @@ MainFrame::MainFrame(const wxString& title) : wxFrame(nullptr, wxID_ANY, title) 
 	Show();
 	num_patrons_ = 0;
 	cur_table_index_ = -1;
-	table_order_ = {};
 	restaurant_data_ = {};
 	frame_ = this; //initialize frame_ to point to MainFrame to pass as a param into admin constructor
 	listbox_ = nullptr;
@@ -137,6 +136,11 @@ bool MainFrame::hasPatrons(int& id) {
 			table_data.s_table_id = id;
 			table_data.s_patrons_sat = num_patrons_;
 			table_data.s_has_people = true;
+			table_data.s_options.clear();
+			table_data.s_options.resize(num_patrons_); //resize the rows
+			for (auto& patronOptions : table_data.s_options) { //resize the columns
+				patronOptions.resize(4); // Give every patron 4 options for their order, depending on the dish
+			}
 		}
 		else {
 			delete dialog_;
@@ -170,7 +174,6 @@ void MainFrame::updatePatronNumberOnClick(wxCommandEvent& evt) {
 	Return false if order_placed_ is true, otherwise return true once process is completed once.
 */
 bool MainFrame::hasOrders(int& id) {
-	table_order_.clear();
 	cur_table_index_ = findIndexOfTable(id);
 	if (cur_table_index_ == -1) return false;
 	else if (restaurant_data_[cur_table_index_].s_has_ordered == true) return false;
@@ -206,17 +209,12 @@ bool MainFrame::hasOrders(int& id) {
 	}
 
 	// if updateOrdersOnClick ends abruptly and all orders were not selected for number of patrons sat, return false
-	if (dialog_->ShowModal() != wxID_OK) {
-		if (restaurant_data_[cur_table_index_].s_has_ordered == true) {
-			restaurant_data_[cur_table_index_].s_order = table_order_;
-		}
-		else {
-			delete dialog_;
-			dialog_ = nullptr;
-			return false;
-			listbox_ = nullptr;
-			choice_ = nullptr;
-		}
+	if (dialog_->ShowModal() != wxID_OK && restaurant_data_[cur_table_index_].s_has_ordered == false) {
+		delete dialog_;
+		dialog_ = nullptr;
+		listbox_ = nullptr;
+		choice_ = nullptr;
+		return false;
 	}
 	return true;
 }
@@ -320,15 +318,15 @@ void MainFrame::storeOptionsFromSelection(wxCommandEvent& evt) {
 	listbox_ = (wxListBox*)this->FindWindowById(evt.GetId());
 	choice_ = (wxChoice*)this->FindWindowById(evt.GetId() - 5);
 	if (choice_->GetSelection() == 0 && this->FindWindowById(evt.GetId() - 15) != NULL) {
-		int index = evt.GetId() - 15; 
-		index = index % 10;
-		restaurant_data_[cur_table_index_].s_option1[index] = listbox_->GetStringSelection();
+		int patron = (evt.GetId() - 15) % 10;
+		int option = choice_->GetSelection(); 
+		restaurant_data_[cur_table_index_].s_options[patron][option] = listbox_->GetStringSelection();
 		wxLogStatus("option1 saved");
 	}
 	else if (choice_->GetSelection() == 1 && this->FindWindowById(evt.GetId() - 15) != NULL) {
-		int index = evt.GetId() - 15;
-		index = index % 10;
-		restaurant_data_[cur_table_index_].s_option2[index] = listbox_->GetStringSelection();
+		int patron = (evt.GetId() - 15) % 10;
+		int option = choice_->GetSelection(); 
+		restaurant_data_[cur_table_index_].s_options[patron][option] = listbox_->GetStringSelection();
 		wxLogStatus("option2 saved");
 	}
 }
@@ -340,35 +338,42 @@ void MainFrame::storeOptionsFromSelection(wxCommandEvent& evt) {
 	Once matched, modal will end, activates rest of AddOrderOfPatrons()
 */
 void MainFrame::updateOrdersOnClick(wxCommandEvent& evt) {
+	wxArrayString table_order;
+	int choiceID = 40;
 	int listboxID = 45;
 	int size = 0; //also acts as the index (if listbox is not nullptr, then value matches index of the person's order)
-	int offset = 0;
+	int offset = 0; // offset is the actual suboption selected for the patron
 	listbox_ = (wxListBox*)this->FindWindowById(listboxID);
-	while (listbox_ != nullptr) {
-		if (listbox_->GetStringSelection() != "") {
+	choice_ = (wxChoice*)this->FindWindowById(choiceID);
+	while (choice_ != nullptr) {
+		if (listbox_ != nullptr && listbox_->GetStringSelection() != "") {
 			wxString order = listbox_->GetStringSelection();
-			table_order_.Add(order);
-			if (restaurant_data_[cur_table_index_].s_option1[size] != "") {
-				order = "  -" + restaurant_data_[cur_table_index_].s_option1[size];
-				table_order_.Add(order);
+			table_order.Add(order);
+			if (restaurant_data_[cur_table_index_].s_options[size][offset] != "") {
+				order = "  -" + restaurant_data_[cur_table_index_].s_options[size][offset];
+				table_order.Add(order);
 				offset++;
 			}
-			if (restaurant_data_[cur_table_index_].s_option2[size] != "") {
-				order = "  -" + restaurant_data_[cur_table_index_].s_option2[size];
-				table_order_.Add(order);
+			if (restaurant_data_[cur_table_index_].s_options[size][offset] != "") {
+				order = "  -" + restaurant_data_[cur_table_index_].s_options[size][offset];
+				table_order.Add(order);
 				offset++;
 			}
 		}
+		choiceID++;
 		listboxID++;
 		size++;
 		listbox_ = (wxListBox*)this->FindWindowById(listboxID);
+		choice_ = (wxChoice*)this->FindWindowById(choiceID);
 	}
-	if (table_order_.size() - offset != size) {
+	if (table_order.size() - offset != size) {
 		wxLogStatus("All orders were not selected for the number of patrons present. Try again");
-		table_order_.clear();
+		table_order.clear();
 	}
-	else if (table_order_.size() - offset == size) {
+	else if (table_order.size() - offset == size) {
+		restaurant_data_[cur_table_index_].s_order = std::move(table_order);
 		restaurant_data_[cur_table_index_].s_has_ordered = true;
+		table_order.clear();
 		updateCountOfDishes(); //updates the number of times a dishes has been ordered this session
 		dialog_->EndModal(0);
 		delete dialog_;

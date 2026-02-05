@@ -10,8 +10,7 @@ public:
 	struct TableData {
 		int s_table_id = 0;
 		wxArrayString s_order = {};
-		wxArrayString s_option1 = {"", "", "", ""};
-		wxArrayString s_option2 = {"", "", "", ""};
+		std::vector<wxArrayString> s_options; 
 		int s_patrons_sat = 0;
 		bool s_has_ordered = false;
 		bool s_has_people = false;
@@ -49,7 +48,6 @@ public:
 private:
 	int num_patrons_;
 	int cur_table_index_;
-	wxArrayString table_order_;
 	std::vector<TableData> restaurant_data_;
 	wxFrame* frame_;
 	wxListBox* listbox_;
