@@ -50,7 +50,6 @@ private:
 	int num_patrons_;
 	int cur_table_index_;
 	std::vector<TableData> restaurant_data_;
-	wxFrame* frame_;
 	wxListBox* listbox_;
 	wxChoice* choice_;
 	wxSpinCtrl* spin_;

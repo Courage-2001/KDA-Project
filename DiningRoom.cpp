@@ -7,7 +7,6 @@ DiningRoom::DiningRoom(const wxString& title) : wxFrame(nullptr, wxID_ANY, title
 	num_patrons_ = 0;
 	cur_table_index_ = -1;
 	restaurant_data_ = {};
-	frame_ = this; //initialize frame_ to point to MainFrame to pass as a param into admin constructor
 	listbox_ = nullptr;
 	choice_ = nullptr;
 	spin_ = nullptr;
@@ -37,36 +36,44 @@ DiningRoom::DiningRoom(const wxString& title) : wxFrame(nullptr, wxID_ANY, title
 	this->Bind(wxEVT_CLOSE_WINDOW, &DiningRoom::mainframeOnClose, this); //binds event when closing the window
 }
 
-// Function that creates boxes only if conditions have been match, where each listbox will be binded to onListBoxClicked() on runtime
-// For the moment, If s_options exceed the size of the listbox, it does not display due to size constraints. 
+// Function that displays current orders sent to the kitchen, where each object is binded to an event to close the order in the kitchen
+// BUG: Not displaying all orders (suspect it has something to do with shared pointers when trying to save to s_options
 void DiningRoom::createListBox(wxWindow* panel) {
-	int x = 150;
-	int y = 50;
+	wxBoxSizer* mainSizer = new wxBoxSizer(wxHORIZONTAL); // Holds all vertical columns containing list boxes
+	wxBoxSizer* colSizer = new wxBoxSizer(wxVERTICAL);
+	int colHeight = 0;
+	const int maxHeight = 600;
+
 	for (auto it = restaurant_data_.begin(); it != restaurant_data_.end(); ++it) {
 		if (it->s_has_ordered == true && it->s_food_served == false) {
-			listbox_ = new wxListBox(panel, it->s_table_id, wxPoint(x, y), wxSize(120, 100), {});
+			listbox_ = new wxListBox(panel, it->s_table_id, wxDefaultPosition, wxSize(225, 200), {});
 			listbox_->SetBackgroundColour(wxColor(0, 0, 200));
 			listbox_->InsertItems(it->s_order, 0);
+			listbox_->SetFont(wxFont(14, wxFONTFAMILY_DEFAULT, wxFONTSTYLE_NORMAL, wxFONTWEIGHT_NORMAL));
 			listbox_->Bind(wxEVT_LISTBOX_DCLICK, &DiningRoom::onListBoxClicked, this);
-			y += 140;
-			if (y == 750) {
-				x += 150;
-				y = 50;
+
+
+			colSizer->Add(listbox_, 0, wxALL, 10);
+			colHeight += 200 + 10; // Increase by height of listbox plus border spacing around listbox
+			if (colHeight > maxHeight) {
+				mainSizer->Add(colSizer, 0, wxALL, 5); 
+				colSizer = new wxBoxSizer(wxVERTICAL);
+				colHeight = 0;
 			}
 		}
 	}
+	// Take into account final column that did not reach max height
+	if (colHeight > 0) {
+		mainSizer->Add(colSizer, 0, wxALL, 5);
+	}
+
+	panel->SetSizer(mainSizer);
+	panel->Layout();
 }
 
-/*
-	Loop that adds inline buttons, where y(location of button) increments until reaches a certain point,
-	moves to the next column of buttons.
-
-	CreateButtons() will remember color from previous instance, if id on creation is present already in container. Every
-	button is also binded on runtime, to OnButtonClick().
-
-	NOTE: id represent table number, which is of type integer 
-		  (where ID of 2 represents table 1 , ID of 3 is table 2, and so on because numbers 0 & 1 are offlimits for framework)
-*/
+// Function that creates the layout of tables in the restaurant (represented as inline wxButton), and sets the state of the table by color code
+// Red: Food served to table, Orange: Order taken & Sent to Kitchen, Green: Patrons present, Black: Empty table
+// To be reworked in near future
 void DiningRoom::createButtons(wxWindow* panel) {
 	int tableID = ID_TABLE_BASE;
 	int x = 150;
@@ -111,9 +118,7 @@ int DiningRoom::findIndexOfTable(int& id) const {
 	return -1;
 }
 
-// Function that creates a dialog, intended purpose is to take an input integer by user, then write to the table_data
-// the table id, number of patrons, and if people have been sat, which is then fed into OnButtonClick event for the table
-// for the purposes of changing the color of button and pushing back data.
+// Function that creates a dialog, intended purpose is to take an integer input by user, then write to the table_data
 // Returns false if s_has_people is true OR if num_patrons = 0, otherwise return true once process is completed once.
 bool DiningRoom::hasPatrons(int& id) {
 	num_patrons_ = 0;
@@ -128,26 +133,24 @@ bool DiningRoom::hasPatrons(int& id) {
 	button->Bind(wxEVT_BUTTON, &DiningRoom::updatePatronNumberOnClick, this);
 
 	//if UpdatePatronOnClick event terminates dialog, update variables (only if successful process)
-	if (dialog_->ShowModal() != wxID_OK) {
-		if (num_patrons_ != 0) {
-			table_data.s_table_id = id;
-			table_data.s_patrons_sat = num_patrons_;
-			table_data.s_has_people = true;
-			table_data.s_options.clear();
-			table_data.s_options.resize(num_patrons_); //resize the rows
-			for (auto& patronOptions : table_data.s_options) { //resize the columns
-				patronOptions.resize(4); // Give every patron 4 options for their order, depending on the dish
-			}
-		}
-		else {
-			delete dialog_;
-			dialog_ = nullptr;
-			spin_ = nullptr;
-			return false;
+	// also removed clear on s_options, no idea of the reprocussions
+	if (dialog_->ShowModal() == wxID_OK && num_patrons_ > 0) {
+		table_data.s_table_id = id;
+		table_data.s_patrons_sat = num_patrons_;
+		table_data.s_has_people = true;
+		table_data.s_options.resize(num_patrons_); //resize the rows
+		for (auto& patronOptions : table_data.s_options) { //resize the columns
+			patronOptions.resize(4); // Give every patron 4 options for their order, depending on the dish
 		}
 	}
-	restaurant_data_.push_back(std::move(table_data));
-	return true;
+	dialog_->Destroy();
+	dialog_ = nullptr;
+	spin_ = nullptr;
+	if (table_data.s_has_people == true) {
+		restaurant_data_.push_back(std::move(table_data));
+		return true;
+	}
+	return false;
 }
 
 /*

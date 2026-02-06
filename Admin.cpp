@@ -4,10 +4,9 @@
 	Intiliazes frame_ to point to MainFrame's frame
 	Creates all the necessary components for the GUI, and binds events to certain actions
 */
-Admin::Admin(const wxString& title, wxFrame* frame) : wxFrame(nullptr, wxID_ANY, title) {
+Admin::Admin(const wxString& title, wxFrame* frame) : wxFrame(frame, wxID_ANY, title) {
 	SetClientSize(800, 600);
 	Center();
-	frame_ = frame;
 
 	wxPanel* loginPanel = new wxPanel(this, wxID_ANY, wxPoint(0, 0), wxSize(800, 800));
 	wxStaticText* staticUser = new wxStaticText(loginPanel, wxID_ANY, "Enter Username: ", wxPoint(200, 100));
@@ -140,10 +139,10 @@ void Admin::loginButtonClicked(wxCommandEvent& evt) {
 				<< "Steak Veal Chicken Lamb Porkchops "
 				<< "SteakandLobster SurfandTurf ChickenandSteak ShrimpoverLinguini SteakwithShrimp " << std::endl;
 			newDatabase.close();
-
+			if (GetParent() != nullptr) { //double check if this really works
+				GetParent()->Show();
+			}
 			this->Destroy();
-			frame_->Show();
-			frame_ = nullptr;
 			username = nullptr;
 			password = nullptr;
 			wxLogStatus("Database successfully created!");
@@ -171,7 +170,8 @@ void Admin::loginButtonClicked(wxCommandEvent& evt) {
 }
 
 void Admin::adminFrameOnClose(wxCloseEvent& evt) {
-	this->Destroy(); //bad use, but it works. unsure why Close() does not work
-	frame_->Show();
-	frame_ = nullptr;
+	if (GetParent() != nullptr) {
+		GetParent()->Show();
+	}
+	this->Destroy();
 }

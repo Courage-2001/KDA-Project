@@ -4,10 +4,7 @@
 // used to determine action during Modal of hasPatrons()
 void DiningRoom::updatePatronNumberOnClick(wxCommandEvent& evt) {
 	num_patrons_ = spin_->GetValue();
-	dialog_->EndModal(0);
-	delete dialog_;
-	dialog_ = nullptr;
-	spin_ = nullptr;
+	dialog_->EndModal(wxID_OK);
 }
 
 /*
@@ -270,7 +267,7 @@ void DiningRoom::onButtonClick(wxCommandEvent& evt) {
 */
 void DiningRoom::onSettingClicked(wxCommandEvent& evt) {
 	Hide();
-	Admin* admin = new Admin("login", frame_);
+	Admin* admin = new Admin("login", this);
 	if (admin->hasDatabase()) {
 		setDataIntoDatabase(seafood_, meat_, combination_);
 	}
@@ -278,7 +275,7 @@ void DiningRoom::onSettingClicked(wxCommandEvent& evt) {
 }
 
 void DiningRoom::mainframeOnClose(wxCloseEvent& evt) {
-	Admin* admin = new Admin("", frame_);
+	Admin* admin = new Admin("", this);
 	if (admin->hasDatabase()) {
 		setDataIntoDatabase(seafood_, meat_, combination_);
 	}

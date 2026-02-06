@@ -11,7 +11,4 @@ public:
 	void displayDataFromDatabase();
 	bool searchUserAndPass(bool& user, bool& pass);
 	bool hasDatabase();
-
-private:
-	wxFrame* frame_;
 };
